@@ -34,7 +34,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         BillableMetric metric = mapper.toEntity(request);
 
         if (request.getUsageConditions() != null) {
-            List<UsageCondition> conditions = mapper.toUsageConditionEntityList(request.getUsageConditions());
+            List<UsageCondition> conditions = mapper.toEntityList(request.getUsageConditions());
             conditions.forEach(c -> c.setBillableMetric(metric));
             metric.setUsageConditions(conditions);
         }
@@ -57,7 +57,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
         conditionRepo.deleteAll(existing.getUsageConditions());
 
-        List<UsageCondition> updatedConditions = mapper.toUsageConditionEntityList(request.getUsageConditions());
+        List<UsageCondition> updatedConditions = mapper.toEntityList(request.getUsageConditions());
         updatedConditions.forEach(c -> c.setBillableMetric(existing));
         existing.setUsageConditions(updatedConditions);
 

@@ -12,5 +12,6 @@
 /Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/dto/CreateBillableMetricRequest.java
 /Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/dto/BillableMetricResponse.java
 /Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/BillableMetricsServiceApplication.java
+/Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/config/WebConfig.java
 /Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/mapper/BillableMetricMapper.java
 /Users/venkatagowtham/Desktop/billablemetrics/billable-metrics-service/src/main/java/com/aforo/billablemetrics/entity/UsageCondition.java

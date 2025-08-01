@@ -15,11 +15,11 @@ public interface BillableMetricMapper {
 
     List<BillableMetricResponse> toResponseList(List<BillableMetric> entities);
 
+    @Mapping(target = "billableMetric", ignore = true)
     UsageCondition toEntity(UsageConditionDTO dto);
 
     UsageConditionDTO toDto(UsageCondition entity);
 
-    List<UsageCondition> toUsageConditionEntityList(List<UsageConditionDTO> dtoList);
-
-    List<UsageConditionDTO> toUsageConditionDtoList(List<UsageCondition> entityList);
+    List<UsageConditionDTO> toDtoList(List<UsageCondition> entities);
+    List<UsageCondition> toEntityList(List<UsageConditionDTO> dtos);
 }

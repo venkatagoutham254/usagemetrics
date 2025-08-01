@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-01T10:08:30+0530",
+    date = "2025-08-01T10:28:49+0530",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 23.0.2 (Homebrew)"
 )
 @Component
@@ -34,7 +34,7 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
         billableMetric.description( request.getDescription() );
         billableMetric.aggregationFunction( request.getAggregationFunction() );
         billableMetric.aggregationWindow( request.getAggregationWindow() );
-        billableMetric.usageConditions( toUsageConditionEntityList( request.getUsageConditions() ) );
+        billableMetric.usageConditions( toEntityList( request.getUsageConditions() ) );
 
         return billableMetric.build();
     }
@@ -53,7 +53,7 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
         entity.setAggregationFunction( request.getAggregationFunction() );
         entity.setAggregationWindow( request.getAggregationWindow() );
         if ( entity.getUsageConditions() != null ) {
-            List<UsageCondition> list = toUsageConditionEntityList( request.getUsageConditions() );
+            List<UsageCondition> list = toEntityList( request.getUsageConditions() );
             if ( list != null ) {
                 entity.getUsageConditions().clear();
                 entity.getUsageConditions().addAll( list );
@@ -63,7 +63,7 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
             }
         }
         else {
-            List<UsageCondition> list = toUsageConditionEntityList( request.getUsageConditions() );
+            List<UsageCondition> list = toEntityList( request.getUsageConditions() );
             if ( list != null ) {
                 entity.setUsageConditions( list );
             }
@@ -86,7 +86,7 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
         billableMetricResponse.description( entity.getDescription() );
         billableMetricResponse.aggregationFunction( entity.getAggregationFunction() );
         billableMetricResponse.aggregationWindow( entity.getAggregationWindow() );
-        billableMetricResponse.usageConditions( toUsageConditionDtoList( entity.getUsageConditions() ) );
+        billableMetricResponse.usageConditions( toDtoList( entity.getUsageConditions() ) );
 
         return billableMetricResponse.build();
     }
@@ -136,28 +136,28 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
     }
 
     @Override
-    public List<UsageCondition> toUsageConditionEntityList(List<UsageConditionDTO> dtoList) {
-        if ( dtoList == null ) {
+    public List<UsageConditionDTO> toDtoList(List<UsageCondition> entities) {
+        if ( entities == null ) {
             return null;
         }
 
-        List<UsageCondition> list = new ArrayList<UsageCondition>( dtoList.size() );
-        for ( UsageConditionDTO usageConditionDTO : dtoList ) {
-            list.add( toEntity( usageConditionDTO ) );
+        List<UsageConditionDTO> list = new ArrayList<UsageConditionDTO>( entities.size() );
+        for ( UsageCondition usageCondition : entities ) {
+            list.add( toDto( usageCondition ) );
         }
 
         return list;
     }
 
     @Override
-    public List<UsageConditionDTO> toUsageConditionDtoList(List<UsageCondition> entityList) {
-        if ( entityList == null ) {
+    public List<UsageCondition> toEntityList(List<UsageConditionDTO> dtos) {
+        if ( dtos == null ) {
             return null;
         }
 
-        List<UsageConditionDTO> list = new ArrayList<UsageConditionDTO>( entityList.size() );
-        for ( UsageCondition usageCondition : entityList ) {
-            list.add( toDto( usageCondition ) );
+        List<UsageCondition> list = new ArrayList<UsageCondition>( dtos.size() );
+        for ( UsageConditionDTO usageConditionDTO : dtos ) {
+            list.add( toEntity( usageConditionDTO ) );
         }
 
         return list;

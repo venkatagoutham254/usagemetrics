@@ -4,6 +4,7 @@ com/aforo/billablemetrics/dto/BillableMetricResponse$BillableMetricResponseBuild
 com/aforo/billablemetrics/webclient/ProductServiceClient.class
 com/aforo/billablemetrics/controller/BillableMetricController.class
 com/aforo/billablemetrics/dto/UsageConditionDTO$UsageConditionDTOBuilder.class
+com/aforo/billablemetrics/config/WebConfig.class
 com/aforo/billablemetrics/webclient/ProductServiceClient$ProductResponse.class
 com/aforo/billablemetrics/repository/BillableMetricRepository.class
 com/aforo/billablemetrics/config/WebClientConfig.class
