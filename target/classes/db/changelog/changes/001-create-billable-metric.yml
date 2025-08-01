@@ -13,67 +13,49 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
                     nullable: false
-              - column: { name: name, type: VARCHAR(255) }
-              - column: { name: description, type: TEXT }
+
+              - column: { name: metric_name, type: VARCHAR(255) }
+              - column: { name: product_id, type: BIGINT }
+              - column: { name: version, type: VARCHAR(100) }
               - column: { name: unit_of_measure, type: VARCHAR(100) }
-              - column: { name: transaction_format, type: VARCHAR(50) }
-              - column: { name: data_source, type: VARCHAR(255) }
+              - column: { name: description, type: TEXT }
+              - column: { name: aggregation_function, type: VARCHAR(100) }
+              - column: { name: aggregation_window, type: VARCHAR(100) }
 
-              # Filter fields
-              - column: { name: filter_field_name, type: VARCHAR(255) }
-              - column: { name: filter_operator, type: VARCHAR(50) }
-              - column: { name: filter_value, type: VARCHAR(255) }
-              - column: { name: logical_combiner, type: VARCHAR(20) }
-              - column: { name: case_sensitive, type: BOOLEAN }
+  - changeSet:
+      id: create-usage-condition-table
+      author: aforo
+      changes:
+        - createTable:
+            tableName: usage_condition
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
 
-              # Aggregation fields
-              - column: { name: aggregation_function, type: VARCHAR(50) }
-              - column: { name: aggregation_window, type: VARCHAR(50) }
-              - column: { name: group_by_keys, type: VARCHAR(255) }
-              - column: { name: threshold, type: INTEGER }
-              - column: { name: reset_behavior, type: VARCHAR(50) }
-
-              # API fields
-              - column: { name: api_name, type: VARCHAR(255) }
-              - column: { name: api_version, type: VARCHAR(50) }
-              - column: { name: api_path, type: VARCHAR(255) }
-              - column: { name: api_method, type: VARCHAR(10) }
-
-              # LLM fields
-              - column: { name: llm_model, type: VARCHAR(255) }
-              - column: { name: llm_endpoint_type, type: VARCHAR(100) }
-              - column: { name: llm_version, type: VARCHAR(50) }
-
-              # Data Exchange fields
-              - column: { name: job_type, type: VARCHAR(100) }
-              - column: { name: source_system, type: VARCHAR(100) }
-              - column: { name: target_system, type: VARCHAR(100) }
-
-              # Embedded Analytics
-              - column: { name: dashboard_id, type: VARCHAR(100) }
-              - column: { name: widget_id, type: VARCHAR(100) }
-              - column: { name: app_section, type: VARCHAR(100) }
-              - column: { name: interaction_type, type: VARCHAR(50) }
-              - column: { name: analytics_user_role, type: VARCHAR(50) }
-
-              # AI Agent
-              - column: { name: agent_id, type: VARCHAR(100) }
-              - column: { name: agent_version, type: VARCHAR(50) }
-              - column: { name: deployment, type: VARCHAR(100) }
-              - column: { name: trigger_type, type: VARCHAR(50) }
-              - column: { name: channel, type: VARCHAR(50) }
-              - column: { name: agent_role, type: VARCHAR(50) }
-
-              # Lifecycle & Advanced
-              - column: { name: effective_start_date, type: DATE }
-              - column: { name: effective_end_date, type: DATE }
-              - column: { name: is_enabled, type: BOOLEAN }
-              - column: { name: priority, type: INTEGER }
-              - column: { name: audit_log_id, type: VARCHAR(255) }
-
-              # Validation & Processing
-              - column: { name: schema_validation_type, type: VARCHAR(100) }
-              - column: { name: processing_type, type: VARCHAR(50) }
-              - column: { name: error_handling, type: VARCHAR(100) }
-              - column: { name: performance_sla, type: VARCHAR(50) }
-              - column: { name: dry_run_mode, type: BOOLEAN }
+              - column:
+                  name: dimension
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: operator
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: value
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: metric_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_usage_condition_metric
+                    references: billable_metric(metric_id)

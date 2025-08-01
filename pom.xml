@@ -34,12 +34,16 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
-
-    <!-- OpenAPI/Swagger -->
     <dependency>
-      <groupId>org.springdoc</groupId>
-      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>2.2.0</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+
+    <!-- PostgreSQL -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
     </dependency>
 
     <!-- Liquibase -->
@@ -48,11 +52,11 @@
       <artifactId>liquibase-core</artifactId>
     </dependency>
 
-    <!-- PostgreSQL -->
+    <!-- OpenAPI/Swagger -->
     <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.2.0</version>
     </dependency>
 
     <!-- MapStruct -->
@@ -70,7 +74,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Lombok support for MapStruct -->
+    <!-- Lombok + MapStruct Binding -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok-mapstruct-binding</artifactId>
@@ -80,41 +84,50 @@
   </dependencies>
 
   <build>
-    <plugins>
-      <!-- Compiler Plugin with Annotation Processors -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-          <parameters>true</parameters>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.mapstruct</groupId>
-              <artifactId>mapstruct-processor</artifactId>
-              <version>1.5.5.Final</version>
-            </path>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>1.18.32</version>
-            </path>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok-mapstruct-binding</artifactId>
-              <version>0.2.0</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
+  <sourceDirectory>src/main/java</sourceDirectory>
+  <resources>
+    <resource>
+      <directory>src/main/resources</directory>
+    </resource>
+  </resources>
+  <plugins>
+    <!-- 👇 IMPORTANT: this config ensures Spring sees MapStruct-generated mappers -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.10.1</version>
+      <configuration>
+        <source>${java.version}</source>
+        <target>${java.version}</target>
+        <parameters>true</parameters>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>1.5.5.Final</version>
+          </path>
+          <path>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version>
+          </path>
+          <path>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-mapstruct-binding</artifactId>
+            <version>0.2.0</version>
+          </path>
+        </annotationProcessorPaths>
+        <generatedSourcesDirectory>${project.build.directory}/generated-sources/annotations</generatedSourcesDirectory>
+      </configuration>
+    </plugin>
 
-      <!-- Spring Boot Repackage Plugin -->
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+    <!-- Spring Boot plugin -->
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+    </plugin>
+  </plugins>
+</build>
+
+
 </project>
