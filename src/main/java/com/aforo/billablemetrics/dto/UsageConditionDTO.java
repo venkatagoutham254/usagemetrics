@@ -1,15 +1,15 @@
 package com.aforo.billablemetrics.dto;
 
-import lombok.*;
+import com.aforo.billablemetrics.enums.DimensionDefinition;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+import lombok.Data;
+
+@Data
 public class UsageConditionDTO {
 
-    private String dimension;
-    private String operator;
-    private String value;
+private DimensionDefinition dimension;
+private String operator;
+    private String value;       // ✅ This remains unchanged
+
+    // Do NOT expose DataType here — it will be derived in service
 }

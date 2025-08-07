@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-01T10:28:49+0530",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 23.0.2 (Homebrew)"
+    date = "2025-08-07T14:12:32+0530",
+    comments = "version: 1.6.2, compiler: javac, environment: Java 23.0.2 (Homebrew)"
 )
 @Component
 public class BillableMetricMapperImpl implements BillableMetricMapper {
@@ -27,13 +27,13 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
 
         BillableMetric.BillableMetricBuilder billableMetric = BillableMetric.builder();
 
-        billableMetric.metricName( request.getMetricName() );
         billableMetric.productId( request.getProductId() );
-        billableMetric.version( request.getVersion() );
-        billableMetric.unitOfMeasure( request.getUnitOfMeasure() );
+        billableMetric.metricName( request.getMetricName() );
         billableMetric.description( request.getDescription() );
+        billableMetric.unitOfMeasure( request.getUnitOfMeasure() );
         billableMetric.aggregationFunction( request.getAggregationFunction() );
         billableMetric.aggregationWindow( request.getAggregationWindow() );
+        billableMetric.version( request.getVersion() );
         billableMetric.usageConditions( toEntityList( request.getUsageConditions() ) );
 
         return billableMetric.build();
@@ -45,13 +45,13 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
             return;
         }
 
-        entity.setMetricName( request.getMetricName() );
         entity.setProductId( request.getProductId() );
-        entity.setVersion( request.getVersion() );
-        entity.setUnitOfMeasure( request.getUnitOfMeasure() );
+        entity.setMetricName( request.getMetricName() );
         entity.setDescription( request.getDescription() );
+        entity.setUnitOfMeasure( request.getUnitOfMeasure() );
         entity.setAggregationFunction( request.getAggregationFunction() );
         entity.setAggregationWindow( request.getAggregationWindow() );
+        entity.setVersion( request.getVersion() );
         if ( entity.getUsageConditions() != null ) {
             List<UsageCondition> list = toEntityList( request.getUsageConditions() );
             if ( list != null ) {
@@ -78,14 +78,14 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
 
         BillableMetricResponse.BillableMetricResponseBuilder billableMetricResponse = BillableMetricResponse.builder();
 
-        billableMetricResponse.metricId( entity.getMetricId() );
-        billableMetricResponse.metricName( entity.getMetricName() );
+        billableMetricResponse.billableMetricId( entity.getBillableMetricId() );
         billableMetricResponse.productId( entity.getProductId() );
-        billableMetricResponse.version( entity.getVersion() );
-        billableMetricResponse.unitOfMeasure( entity.getUnitOfMeasure() );
+        billableMetricResponse.metricName( entity.getMetricName() );
         billableMetricResponse.description( entity.getDescription() );
+        billableMetricResponse.unitOfMeasure( entity.getUnitOfMeasure() );
         billableMetricResponse.aggregationFunction( entity.getAggregationFunction() );
         billableMetricResponse.aggregationWindow( entity.getAggregationWindow() );
+        billableMetricResponse.version( entity.getVersion() );
         billableMetricResponse.usageConditions( toDtoList( entity.getUsageConditions() ) );
 
         return billableMetricResponse.build();
@@ -126,13 +126,13 @@ public class BillableMetricMapperImpl implements BillableMetricMapper {
             return null;
         }
 
-        UsageConditionDTO.UsageConditionDTOBuilder usageConditionDTO = UsageConditionDTO.builder();
+        UsageConditionDTO usageConditionDTO = new UsageConditionDTO();
 
-        usageConditionDTO.dimension( entity.getDimension() );
-        usageConditionDTO.operator( entity.getOperator() );
-        usageConditionDTO.value( entity.getValue() );
+        usageConditionDTO.setDimension( entity.getDimension() );
+        usageConditionDTO.setOperator( entity.getOperator() );
+        usageConditionDTO.setValue( entity.getValue() );
 
-        return usageConditionDTO.build();
+        return usageConditionDTO;
     }
 
     @Override
