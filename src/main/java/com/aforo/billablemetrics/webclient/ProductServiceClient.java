@@ -4,8 +4,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RequiredArgsConstructor
@@ -42,10 +45,26 @@ public class ProductServiceClient {
         }
     }
 
-    @Getter
-    @Setter
-    private static class ProductResponse {
-        private Long productId;
-        private String productName;
+    public String getProductTypeById(Long productId) {
+    try {
+        return productServiceWebClient.get()
+                .uri("/{id}", productId)
+                .retrieve()
+                .bodyToMono(ProductResponse.class)
+                .map(ProductResponse::getProductType)
+                .block();
+    } catch (Exception e) {
+        log.warn("Failed to fetch product type: {}", e.getMessage());
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product type for ID: " + productId);
     }
+}
+
+@Getter
+@Setter
+private static class ProductResponse {
+    private Long productId;
+    private String productName;
+    private String productType; // 🔥 ensure backend sends this
+}
+
 }

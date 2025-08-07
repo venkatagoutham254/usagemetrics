@@ -1,24 +1,34 @@
 package com.aforo.billablemetrics.dto;
 
-import lombok.*;
+import com.aforo.billablemetrics.enums.UnitOfMeasure;
+import com.aforo.billablemetrics.enums.AggregationFunction;
+import com.aforo.billablemetrics.enums.AggregationWindow;
+import lombok.Builder;
+import lombok.Data;
 
 import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
 public class BillableMetricResponse {
 
-    private Long metricId;
+    private Long billableMetricId;
+
     private String metricName;
+
     private Long productId;
-    private String productName; // populated from product-service
+
+    private String productName;
+
     private String version;
-    private String unitOfMeasure;
+
+    private UnitOfMeasure unitOfMeasure;
+
     private String description;
-    private String aggregationFunction;
-    private String aggregationWindow;
+
+    private AggregationFunction aggregationFunction;
+
+    private AggregationWindow aggregationWindow;
+
     private List<UsageConditionDTO> usageConditions;
 }

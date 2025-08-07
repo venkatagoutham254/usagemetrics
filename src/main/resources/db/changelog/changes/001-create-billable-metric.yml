@@ -7,7 +7,7 @@ databaseChangeLog:
             tableName: billable_metric
             columns:
               - column:
-                  name: metric_id
+                  name: billable_metric_id
                   type: BIGINT
                   autoIncrement: true
                   constraints:
@@ -52,10 +52,11 @@ databaseChangeLog:
                   type: VARCHAR(255)
                   constraints:
                     nullable: true
+
               - column:
-                  name: metric_id
+                  name: billable_metric_id
                   type: BIGINT
                   constraints:
                     nullable: false
                     foreignKeyName: fk_usage_condition_metric
-                    references: billable_metric(metric_id)
+                    references: billable_metric(billable_metric_id)
