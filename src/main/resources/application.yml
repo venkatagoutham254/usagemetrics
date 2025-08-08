@@ -13,4 +13,4 @@ spring:
 application:
   name: billable-metrics-service
 server:
-  port: 8085
+  port: 8081
