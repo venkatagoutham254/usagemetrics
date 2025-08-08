@@ -10,7 +10,7 @@ public class WebClientConfig {
     @Bean
     public WebClient productServiceWebClient() {
         return WebClient.builder()
-                .baseUrl("http://13.230.194.245:8080/api/products")
+                .baseUrl("http://54.238.204.246:8080/api/products")
                 .build();
     }
 }
