@@ -27,8 +27,8 @@ public interface BillableMetricMapper {
     @Mapping(source = "aggregationWindow", target = "aggregationWindow")
     @Mapping(source = "version", target = "version")
     @Mapping(source = "usageConditions", target = "usageConditions")
+    @Mapping(source = "billingCriteria", target = "billingCriteria")
     BillableMetricResponse toResponse(BillableMetric entity);
-
     List<BillableMetricResponse> toResponseList(List<BillableMetric> entities);
 
     // ✅ For UsageCondition mapping (handled separately from BillableMetric)

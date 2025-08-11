@@ -45,6 +45,10 @@ public class BillableMetric {
     @Column(name = "version")
     private String version;
 
+    @Column(name = "billing_criteria")
+    @Enumerated(EnumType.STRING)
+    private com.aforo.billablemetrics.enums.BillingCriteria billingCriteria;
+
     @OneToMany(mappedBy = "billableMetric", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UsageCondition> usageConditions;
 }

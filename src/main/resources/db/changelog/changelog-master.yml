@@ -1,3 +1,6 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/001-create-billable-metric.yml
+  - include:
+      file: db/changelog/changes/002-add-billing-criteria-to-billable-metric.yml
+      

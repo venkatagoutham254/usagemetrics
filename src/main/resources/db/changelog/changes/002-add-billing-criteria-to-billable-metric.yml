@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-billing-criteria-to-billable-metric
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: billable_metric
+            columns:
+              - column:
+                  name: billing_criteria
+                  type: VARCHAR(100)
