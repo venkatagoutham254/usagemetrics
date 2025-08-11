@@ -8,6 +8,9 @@ import lombok.Data;
 
 import java.util.List;
 
+
+import com.aforo.billablemetrics.enums.BillingCriteria;
+
 @Data
 @Builder
 public class BillableMetricResponse {
@@ -31,4 +34,6 @@ public class BillableMetricResponse {
     private AggregationWindow aggregationWindow;
 
     private List<UsageConditionDTO> usageConditions;
+
+    private BillingCriteria billingCriteria;
 }
