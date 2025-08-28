@@ -10,6 +10,7 @@ import java.util.List;
 
 
 import com.aforo.billablemetrics.enums.BillingCriteria;
+import com.aforo.billablemetrics.enums.MetricStatus;
 
 @Data
 @Builder
@@ -36,4 +37,7 @@ public class BillableMetricResponse {
     private List<UsageConditionDTO> usageConditions;
 
     private BillingCriteria billingCriteria;
+
+    private MetricStatus status;
+
 }

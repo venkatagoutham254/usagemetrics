@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-status-to-billable-metric
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: billable_metric
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: DRAFT
+                  constraints:
+                    nullable: false
