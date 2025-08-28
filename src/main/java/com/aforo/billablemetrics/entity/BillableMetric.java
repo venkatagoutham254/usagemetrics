@@ -2,6 +2,7 @@ package com.aforo.billablemetrics.entity;
 
 import com.aforo.billablemetrics.enums.AggregationFunction;
 import com.aforo.billablemetrics.enums.AggregationWindow;
+import com.aforo.billablemetrics.enums.MetricStatus;
 import com.aforo.billablemetrics.enums.UnitOfMeasure;
 import jakarta.persistence.*;
 import lombok.*;
@@ -51,4 +52,14 @@ public class BillableMetric {
 
     @OneToMany(mappedBy = "billableMetric", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UsageCondition> usageConditions;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private MetricStatus status;
+
+    @PrePersist
+    void prePersist() {
+        if (status == null) status = MetricStatus.DRAFT;
+    }
 }

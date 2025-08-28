@@ -27,58 +27,113 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private final BillableMetricMapper mapper;
     private final ProductServiceClient productClient;
 
-@Override
-public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
-    validateProductExists(request.getProductId());
-    validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
-
-    BillableMetric metric = mapper.toEntity(request);
-
-
-    if (request.getUsageConditions() != null && !request.getUsageConditions().isEmpty()) {
-        List<UsageCondition> enrichedConditions = enrichUsageConditions(request.getUsageConditions(), metric);
-
-        // ✅ Add validation here
-        BillableMetricValidator.validateAll(
-                request.getUnitOfMeasure(),
-                request.getAggregationFunction(),
-                request.getAggregationWindow(),
-                enrichedConditions
-        );
-
-        metric.setUsageConditions(enrichedConditions);
+    @Override
+    public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
+        // Soft checks only: productId/uom if present
+        if (request.getProductId() != null) {
+            validateProductExists(request.getProductId());
+            if (request.getUnitOfMeasure() != null) {
+                validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
+            }
+        }
+    
+        BillableMetric metric = mapper.toEntity(request);
+    
+        // Status default via @PrePersist → DRAFT
+        if (request.getUsageConditions() != null && !request.getUsageConditions().isEmpty()) {
+            List<UsageCondition> enriched = enrichUsageConditions(request.getUsageConditions(), metric);
+            // Only validate if func/window are present; otherwise postpone to finalize
+            if (metric.getAggregationFunction() != null && metric.getAggregationWindow() != null) {
+                BillableMetricValidator.validateAll(metric.getUnitOfMeasure(),
+                                                    metric.getAggregationFunction(),
+                                                    metric.getAggregationWindow(),
+                                                    enriched);
+            }
+            metric.setUsageConditions(enriched);
+        }
+    
+        BillableMetric saved = metricRepo.save(metric);
+        return buildResponse(saved);
     }
-
-    BillableMetric saved = metricRepo.save(metric);
-    return buildResponse(saved);
-}
-
-@Override
-public BillableMetricResponse updateMetric(Long id, UpdateBillableMetricRequest request) {
-    BillableMetric existing = metricRepo.findById(id)
+    
+    @Override
+    public BillableMetricResponse updateMetric(Long id, UpdateBillableMetricRequest request) {
+        BillableMetric existing = metricRepo.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Metric not found with ID: " + id));
-
-    validateProductExists(request.getProductId());
-    validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
-
-    mapper.updateEntityFromDto(request, existing);
-
-    conditionRepo.deleteAll(existing.getUsageConditions());
-    List<UsageCondition> updatedConditions = enrichUsageConditions(request.getUsageConditions(), existing);
-
-    // ✅ Add validation here
-    BillableMetricValidator.validateAll(
-            request.getUnitOfMeasure(),
-            request.getAggregationFunction(),
-            request.getAggregationWindow(),
-            updatedConditions
-    );
-
-    existing.setUsageConditions(updatedConditions);
-
-    BillableMetric saved = metricRepo.save(existing);
-    return buildResponse(saved);
-}
+    
+        // Only validate product/uom when provided (support partial updates)
+        if (request.getProductId() != null) {
+            validateProductExists(request.getProductId());
+            UnitOfMeasure uomToCheck = request.getUnitOfMeasure() != null ? request.getUnitOfMeasure()
+                                                                          : existing.getUnitOfMeasure();
+            validateUOMMatchesProductType(request.getProductId(), uomToCheck);
+        }
+    
+        mapper.updateEntityFromDto(request, existing);
+    
+        // Conditions: null = leave as-is, empty list = clear, non-empty = replace
+        if (request.getUsageConditions() != null) {
+            conditionRepo.deleteAll(existing.getUsageConditions());
+            List<UsageCondition> updated = request.getUsageConditions().isEmpty()
+                    ? List.of()
+                    : enrichUsageConditions(request.getUsageConditions(), existing);
+    
+            // Validate only if func/window present now; otherwise defer to finalize
+            if (!updated.isEmpty()
+                && existing.getAggregationFunction() != null
+                && existing.getAggregationWindow() != null) {
+                BillableMetricValidator.validateAll(existing.getUnitOfMeasure(),
+                                                    existing.getAggregationFunction(),
+                                                    existing.getAggregationWindow(),
+                                                    updated);
+            }
+    
+            existing.setUsageConditions(updated);
+        }
+    
+        BillableMetric saved = metricRepo.save(existing);
+        return buildResponse(saved);
+    }
+    
+    @Override
+    public BillableMetricResponse finalizeMetric(Long id) {
+        BillableMetric metric = metricRepo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Metric not found with ID: " + id));
+    
+        // HARD requireds (backend gate)
+        if (metric.getMetricName() == null || metric.getMetricName().isBlank())
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
+        if (metric.getProductId() == null)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
+        if (metric.getUnitOfMeasure() == null)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
+        if (metric.getAggregationFunction() == null)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "aggregationFunction is required");
+        if (metric.getAggregationWindow() == null)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "aggregationWindow is required");
+        if (metric.getVersion() == null)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "version is required");
+    
+        // If billing criteria demands conditions → enforce
+        if (metric.getBillingCriteria() == BillingCriteria.BILL_BASED_ON_USAGE_CONDITIONS) {
+            if (metric.getUsageConditions() == null || metric.getUsageConditions().isEmpty())
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "usageConditions are required when billingCriteria=BILL_BASED_ON_USAGE_CONDITIONS");
+        }
+    
+        // Validate combinatorics (UOM ↔ func/window, dimensions/operators)
+        BillableMetricValidator.validateAll(
+            metric.getUnitOfMeasure(),
+            metric.getAggregationFunction(),
+            metric.getAggregationWindow(),
+            metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
+        );
+    
+        // Flip status → ACTIVE
+        metric.setStatus(MetricStatus.ACTIVE);
+        BillableMetric saved = metricRepo.save(metric);
+        return buildResponse(saved);
+    }
+    
 
 
     @Override

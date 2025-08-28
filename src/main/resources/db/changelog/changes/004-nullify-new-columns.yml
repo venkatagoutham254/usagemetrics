@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: relax-nullables-for-draft
+      author: aforo
+      changes:
+        # billable_metric: allow NULLs while in DRAFT
+        - setNullable: { tableName: billable_metric, columnName: metric_name,          columnDataType: VARCHAR(255),  nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: product_id,           columnDataType: BIGINT,        nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: version,              columnDataType: VARCHAR(100),  nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: unit_of_measure,      columnDataType: VARCHAR(100),  nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: description,          columnDataType: TEXT,          nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: aggregation_function, columnDataType: VARCHAR(100),  nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: aggregation_window,   columnDataType: VARCHAR(100),  nullable: true }
+        - setNullable: { tableName: billable_metric, columnName: billing_criteria,     columnDataType: VARCHAR(100),  nullable: true }
+
+  - changeSet:
+    id: check-active-requires-fields
+    author: aforo
+    changes:
+      - addCheckConstraint:
+          tableName: billable_metric
+          constraintName: ck_active_requires_fields
+          checkConstraint: "(status <> 'ACTIVE') OR (
+            metric_name IS NOT NULL AND
+            product_id IS NOT NULL AND
+            unit_of_measure IS NOT NULL AND
+            aggregation_function IS NOT NULL AND
+            aggregation_window IS NOT NULL AND
+            version IS NOT NULL
+          )"
