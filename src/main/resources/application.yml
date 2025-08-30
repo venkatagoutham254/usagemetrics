@@ -14,3 +14,6 @@ application:
   name: billable-metrics-service
 server:
   port: 8081
+  jackson:
+    date-format: dd MMM, yyyy HH:mm z
+    time-zone: Asia/Kolkata
