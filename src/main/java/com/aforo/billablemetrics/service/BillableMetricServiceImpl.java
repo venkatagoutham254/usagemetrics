@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import com.aforo.billablemetrics.enums.*;
 import com.aforo.billablemetrics.util.*;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -217,5 +217,14 @@ private String normalizeProductType(String rawType) {
         BillableMetricResponse response = mapper.toResponse(metric);
         response.setProductName(productClient.getProductNameById(metric.getProductId()));
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BillableMetricResponse> getMetricsByProductId(Long productId) {
+        return metricRepo.findByProductId(productId)
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }

@@ -43,4 +43,14 @@ public class BillableMetricController {
     service.deleteMetric(id);
     return ResponseEntity.noContent().build();
   }
+
+  @GetMapping("/by-product")
+public ResponseEntity<List<BillableMetricResponse>> getAll(
+        @RequestParam(required = false) Long productId) {
+    if (productId != null) {
+        return ResponseEntity.ok(service.getMetricsByProductId(productId));
+    }
+    return ResponseEntity.ok(service.getAllMetrics());
+}
+
 }

@@ -11,5 +11,8 @@ public interface BillableMetricService {
     BillableMetricResponse getMetricById(Long id);
     List<BillableMetricResponse> getAllMetrics();
     void deleteMetric(Long id);
+
+    List<BillableMetricResponse> getMetricsByProductId(Long productId);
+
   }
   
