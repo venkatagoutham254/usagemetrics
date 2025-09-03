@@ -23,6 +23,13 @@ aforo:
     issuer: aforo-billablemetrics
     secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
     expiryMinutes: 120
+  cors:
+    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
+    # Include your frontend origin(s). Add https variants if applicable.
+    allowed-origins: "http://13.115.248.133,http://localhost:3000"
+    allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    allowed-headers: "Authorization,Content-Type,X-Organization-Id"
+    allow-credentials: true
 
 logging:
   level:
