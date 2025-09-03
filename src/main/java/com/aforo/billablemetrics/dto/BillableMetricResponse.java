@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 
 import com.aforo.billablemetrics.enums.BillingCriteria;
@@ -39,5 +40,9 @@ public class BillableMetricResponse {
     private BillingCriteria billingCriteria;
 
     private MetricStatus status;
+
+    private LocalDateTime createdOn;
+
+    private LocalDateTime lastUpdated;
 
 }

@@ -32,6 +32,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         // Soft checks only: productId/uom if present
         if (request.getProductId() != null) {
             validateProductExists(request.getProductId());
+            validateProductActive(request.getProductId());
             if (request.getUnitOfMeasure() != null) {
                 validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
             }
@@ -105,6 +106,8 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
+        // Product must be ACTIVE to finalize the metric
+        validateProductActive(metric.getProductId());
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
         if (metric.getAggregationFunction() == null)
@@ -163,6 +166,12 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private void validateProductExists(Long productId) {
         if (!productClient.productExists(productId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid productId: " + productId);
+        }
+    }
+
+    private void validateProductActive(Long productId) {
+        if (!productClient.isProductActive(productId)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Product must be ACTIVE to create or finalize billable metrics");
         }
     }
 

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-created-lastupdated-columns
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: billable_metric
+            columns:
+              - column:
+                  name: created_on
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_updated
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true

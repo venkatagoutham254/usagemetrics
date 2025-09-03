@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -59,12 +60,29 @@ public class ProductServiceClient {
     }
 }
 
+    public boolean isProductActive(Long productId) {
+        try {
+            String status = productServiceWebClient.get()
+                    .uri("/{id}", productId)
+                    .retrieve()
+                    .bodyToMono(ProductResponse.class)
+                    .map(ProductResponse::getStatus)
+                    .block();
+            return status != null && "ACTIVE".equalsIgnoreCase(status);
+        } catch (Exception e) {
+            log.warn("Failed to fetch product status: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product status for ID: " + productId);
+        }
+    }
+
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
 private static class ProductResponse {
     private Long productId;
     private String productName;
     private String productType; // 🔥 ensure backend sends this
+    private String status; // product status from Product API
 }
 
 }
