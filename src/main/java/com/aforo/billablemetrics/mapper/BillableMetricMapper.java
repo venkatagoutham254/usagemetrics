@@ -14,7 +14,7 @@ import java.util.List;
     componentModel = MappingConstants.ComponentModel.SPRING,
     unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
-public interface BillableMetricMapper {
+public interface BillableMetricMapper{
     
     @Mapping(target = "billableMetricId", ignore = true)
     BillableMetric toEntity(CreateBillableMetricRequest request);

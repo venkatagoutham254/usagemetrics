@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +18,9 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -23,11 +29,25 @@ public class SecurityConfig {
     @Value("${aforo.jwt.secret}")
     private String jwtSecret; // injected from application.yml or env
 
+    // CORS configuration (comma-separated lists)
+    @Value("${aforo.cors.allowed-origins:}")
+    private String corsAllowedOrigins;
+
+    @Value("${aforo.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
+    private String corsAllowedMethods;
+
+    @Value("${aforo.cors.allowed-headers:Authorization,Content-Type,X-Organization-Id}")
+    private String corsAllowedHeaders;
+
+    @Value("${aforo.cors.allow-credentials:true}")
+    private boolean corsAllowCredentials;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtTenantFilter jwtTenantFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
             .authorizeHttpRequests(auth -> auth
                 // Allow Swagger & health endpoints without auth
                 .requestMatchers(
@@ -35,6 +55,8 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/api/health").permitAll()
+                // Allow preflight requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // All billable-metrics APIs need JWT
                 .requestMatchers(HttpMethod.POST, "/api/billable-metrics/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/billable-metrics/**").authenticated()
@@ -64,5 +86,43 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(corsAllowCredentials);
+
+        // Origins: support patterns for AWS/frontends. If not set, default to localhost:3000
+        List<String> originPatterns;
+        if (corsAllowedOrigins == null || corsAllowedOrigins.isBlank()) {
+            originPatterns = List.of("http://localhost:3000");
+        } else {
+            originPatterns = Arrays.stream(corsAllowedOrigins.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        }
+        config.setAllowedOriginPatterns(originPatterns);
+
+        // Methods
+        List<String> methods = Arrays.stream(corsAllowedMethods.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+        config.setAllowedMethods(methods);
+
+        // Headers
+        List<String> headers = Arrays.stream(corsAllowedHeaders.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+        config.setAllowedHeaders(headers);
+
+        config.setExposedHeaders(List.of("Location"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
