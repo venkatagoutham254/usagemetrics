@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/003-create-metricstatus.yml
   - include:
       file: db/changelog/changes/004-nullify-new-columns.yml
+  - include:
+      file: db/changelog/changes/005-add-audit-columns.yml

@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -58,8 +59,21 @@ public class BillableMetric {
     @Column(name = "status", nullable = false)
     private MetricStatus status;
 
+    @Column(name = "created_on")
+    private LocalDateTime createdOn;
+
+    @Column(name = "last_updated")
+    private LocalDateTime lastUpdated;
+
     @PrePersist
     void prePersist() {
         if (status == null) status = MetricStatus.DRAFT;
+        if (createdOn == null) createdOn = LocalDateTime.now();
+        if (lastUpdated == null) lastUpdated = createdOn;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        lastUpdated = LocalDateTime.now();
     }
 }

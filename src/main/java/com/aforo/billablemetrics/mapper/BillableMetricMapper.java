@@ -37,6 +37,8 @@ public interface BillableMetricMapper {
     @Mapping(source = "usageConditions",    target = "usageConditions")
     @Mapping(source = "billingCriteria",    target = "billingCriteria")
     @Mapping(source = "status",             target = "status") // ✨ NEW: map status (DRAFT/ACTIVE) to response
+    @Mapping(source = "createdOn",          target = "createdOn")
+    @Mapping(source = "lastUpdated",        target = "lastUpdated")
     @Mapping(target = "productName",        ignore = true)
     BillableMetricResponse toResponse(BillableMetric entity);
 
