@@ -17,3 +17,13 @@ application:
   name: billable-metrics-service
 server:
   port: 8081
+
+aforo:
+  jwt:
+    issuer: aforo-billablemetrics
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    expiryMinutes: 120
+
+logging:
+  level:
+    com.aforo.billablemetrics.security: DEBUG

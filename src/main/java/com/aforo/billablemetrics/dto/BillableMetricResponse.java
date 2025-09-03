@@ -45,4 +45,7 @@ public class BillableMetricResponse {
 
     private LocalDateTime lastUpdated;
 
+
+
+    private Long organizationId;
 }
