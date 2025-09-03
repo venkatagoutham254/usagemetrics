@@ -15,17 +15,14 @@ import java.util.List;
     unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface BillableMetricMapper {
-
-    // Ignore DB-managed ID on create
+    
     @Mapping(target = "billableMetricId", ignore = true)
     BillableMetric toEntity(CreateBillableMetricRequest request);
 
-    // ✨ NEW: ignore nulls on update (partial PUT) + let service handle usageConditions
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "usageConditions", ignore = true) // service decides: null=keep, []=clear, non-[] = replace
+    @Mapping(target = "usageConditions", ignore = true)
     void updateEntityFromDto(UpdateBillableMetricRequest request, @MappingTarget BillableMetric entity);
 
-    // Map entity -> response; productName is enriched in the service
     @Mapping(source = "billableMetricId",   target = "billableMetricId")
     @Mapping(source = "productId",          target = "productId")
     @Mapping(source = "metricName",         target = "metricName")
@@ -36,18 +33,18 @@ public interface BillableMetricMapper {
     @Mapping(source = "version",            target = "version")
     @Mapping(source = "usageConditions",    target = "usageConditions")
     @Mapping(source = "billingCriteria",    target = "billingCriteria")
-    @Mapping(source = "status",             target = "status") // ✨ NEW: map status (DRAFT/ACTIVE) to response
+    @Mapping(source = "status",             target = "status")
     @Mapping(source = "createdOn",          target = "createdOn")
     @Mapping(source = "lastUpdated",        target = "lastUpdated")
+    @Mapping(source = "organizationId",     target = "organizationId") // 👈 NEW
     @Mapping(target = "productName",        ignore = true)
     BillableMetricResponse toResponse(BillableMetric entity);
 
     List<BillableMetricResponse> toResponseList(List<BillableMetric> entities);
 
-    // UsageCondition mapping – set by service, not by mapper
     @Mapping(target = "billableMetric", ignore = true)
-    @Mapping(target = "type",           ignore = true) // derived from DimensionDefinition
-    @Mapping(target = "id",             ignore = true) // DB-managed
+    @Mapping(target = "type",           ignore = true)
+    @Mapping(target = "id",             ignore = true)
     UsageCondition toEntity(UsageConditionDTO dto);
 
     UsageConditionDTO toDto(UsageCondition entity);

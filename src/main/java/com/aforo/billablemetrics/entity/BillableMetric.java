@@ -65,6 +65,10 @@ public class BillableMetric {
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 
+    @Column(name = "organization_id", nullable = false)
+private Long organizationId;
+
+
     @PrePersist
     void prePersist() {
         if (status == null) status = MetricStatus.DRAFT;
@@ -75,5 +79,7 @@ public class BillableMetric {
     @PreUpdate
     void preUpdate() {
         lastUpdated = LocalDateTime.now();
+
+        
     }
 }
