@@ -10,6 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+
 
 @Component
 @RequiredArgsConstructor
@@ -18,10 +22,19 @@ public class ProductServiceClient {
 
     private final WebClient productServiceWebClient;
 
+    private String getBearerToken() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof Jwt jwt) {
+            return "Bearer " + jwt.getTokenValue();
+        }
+        return null;
+    }
+
     public boolean productExists(Long productId) {
         try {
             productServiceWebClient.get()
                     .uri("/{id}", productId)
+                    .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(Object.class)
                     .block();
@@ -36,6 +49,7 @@ public class ProductServiceClient {
         try {
             return productServiceWebClient.get()
                     .uri("/{id}", productId)
+                    .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductName)
@@ -47,23 +61,25 @@ public class ProductServiceClient {
     }
 
     public String getProductTypeById(Long productId) {
-    try {
-        return productServiceWebClient.get()
-                .uri("/{id}", productId)
-                .retrieve()
-                .bodyToMono(ProductResponse.class)
-                .map(ProductResponse::getProductType)
-                .block();
-    } catch (Exception e) {
-        log.warn("Failed to fetch product type: {}", e.getMessage());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product type for ID: " + productId);
+        try {
+            return productServiceWebClient.get()
+                    .uri("/{id}", productId)
+                    .header("Authorization", getBearerToken())   // ✅ forward token
+                    .retrieve()
+                    .bodyToMono(ProductResponse.class)
+                    .map(ProductResponse::getProductType)
+                    .block();
+        } catch (Exception e) {
+            log.warn("Failed to fetch product type: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product type for ID: " + productId);
+        }
     }
-}
 
     public boolean isProductActive(Long productId) {
         try {
             String status = productServiceWebClient.get()
                     .uri("/{id}", productId)
+                    .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getStatus)
@@ -75,14 +91,13 @@ public class ProductServiceClient {
         }
     }
 
-@Getter
-@Setter
-@JsonIgnoreProperties(ignoreUnknown = true)
-private static class ProductResponse {
-    private Long productId;
-    private String productName;
-    private String productType; // 🔥 ensure backend sends this
-    private String status; // product status from Product API
-}
-
+    @Getter
+    @Setter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ProductResponse {
+        private Long productId;
+        private String productName;
+        private String productType; // 🔥 ensure backend sends this
+        private String status; // product status from Product API
+    }
 }
