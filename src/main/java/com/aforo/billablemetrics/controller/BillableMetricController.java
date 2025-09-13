@@ -57,4 +57,11 @@ public class BillableMetricController {
         }
         return ResponseEntity.ok(service.getAllMetrics());
     }
+
+    // INTERNAL: called by Product Service when a product is deleted
+    @DeleteMapping("/internal/products/{productId}")
+    public ResponseEntity<Void> deleteAllByProduct(@PathVariable Long productId) {
+        service.deleteMetricsByProductId(productId);
+        return ResponseEntity.noContent().build();
+    }
 }
