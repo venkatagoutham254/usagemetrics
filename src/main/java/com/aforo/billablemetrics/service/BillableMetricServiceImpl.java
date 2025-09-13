@@ -6,8 +6,8 @@ import com.aforo.billablemetrics.entity.UsageCondition;
 import com.aforo.billablemetrics.exception.ResourceNotFoundException;
 import com.aforo.billablemetrics.mapper.BillableMetricMapper;
 import com.aforo.billablemetrics.repository.BillableMetricRepository;
-import com.aforo.billablemetrics.repository.UsageConditionRepository;
 import com.aforo.billablemetrics.webclient.ProductServiceClient;
+import com.aforo.billablemetrics.webclient.RatePlanServiceClient;
 import com.aforo.billablemetrics.enums.*;
 import com.aforo.billablemetrics.util.*;
 import com.aforo.billablemetrics.tenant.TenantContext;
@@ -18,15 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
 public class BillableMetricServiceImpl implements BillableMetricService {
 
     private final BillableMetricRepository metricRepo;
-    private final UsageConditionRepository conditionRepo;
     private final BillableMetricMapper mapper;
     private final ProductServiceClient productClient;
+    private final RatePlanServiceClient ratePlanServiceClient;
 
     @Override
     public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
@@ -51,7 +54,8 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                                                     metric.getAggregationWindow(),
                                                     enriched);
             }
-            metric.setUsageConditions(enriched);
+            // Ensure mutable list for JPA-managed collection
+            metric.setUsageConditions(new ArrayList<>(enriched));
         }
 
         BillableMetric saved = metricRepo.save(metric);
@@ -76,20 +80,82 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         mapper.updateEntityFromDto(request, existing);
 
         if (request.getUsageConditions() != null) {
-            conditionRepo.deleteAll(existing.getUsageConditions());
-            List<UsageCondition> updated = request.getUsageConditions().isEmpty()
-                    ? List.of()
-                    : enrichUsageConditions(request.getUsageConditions(), existing);
+            // If empty list explicitly provided, clear all usage conditions
+            if (request.getUsageConditions().isEmpty()) {
+                if (existing.getUsageConditions() == null) {
+                    existing.setUsageConditions(new ArrayList<>());
+                }
+                existing.getUsageConditions().clear();
+            } else {
+                // Build a map of merged DTOs keyed by dimension, starting from current state
+                Map<DimensionDefinition, UsageConditionDTO> merged = new HashMap<>();
+                if (existing.getUsageConditions() != null) {
+                    for (UsageCondition uc : existing.getUsageConditions()) {
+                        UsageConditionDTO dto = mapper.toDto(uc);
+                        merged.put(dto.getDimension(), dto);
+                    }
+                }
 
-            if (!updated.isEmpty()
-                && existing.getAggregationFunction() != null
-                && existing.getAggregationWindow() != null) {
-                BillableMetricValidator.validateAll(existing.getUnitOfMeasure(),
-                                                    existing.getAggregationFunction(),
-                                                    existing.getAggregationWindow(),
-                                                    updated);
+                int existingCount = existing.getUsageConditions() == null ? 0 : existing.getUsageConditions().size();
+
+                for (UsageConditionDTO patch : request.getUsageConditions()) {
+                    DimensionDefinition targetDim = patch.getDimension();
+                    if (targetDim == null) {
+                        // If no dimension provided, allow update only when exactly one existing condition
+                        if (existingCount == 1) {
+                            // Get the single existing dimension
+                            targetDim = existing.getUsageConditions().get(0).getDimension();
+                        } else {
+                            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                                    "usageConditions[].dimension is required when multiple conditions exist");
+                        }
+                    }
+
+                    UsageConditionDTO base = merged.getOrDefault(targetDim, new UsageConditionDTO());
+                    // Ensure dimension is set
+                    base.setDimension(targetDim);
+                    // Apply partial overrides
+                    if (patch.getOperator() != null && !patch.getOperator().isBlank()) {
+                        base.setOperator(patch.getOperator());
+                    }
+                    if (patch.getValue() != null && !patch.getValue().isBlank()) {
+                        base.setValue(patch.getValue());
+                    }
+
+                    // After merge, ensure the condition is complete
+                    if (base.getOperator() == null || base.getOperator().isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                                "usageConditions[].operator is required after merge for dimension: " + targetDim.getDimension());
+                    }
+                    if (base.getValue() == null || base.getValue().isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                                "usageConditions[].value is required after merge for dimension: " + targetDim.getDimension());
+                    }
+
+                    // Put back
+                    merged.put(targetDim, base);
+                }
+
+                // Validate and enrich all merged DTOs against UOM and operators
+                List<UsageConditionDTO> mergedList = new ArrayList<>(merged.values());
+                List<UsageCondition> updated = enrichUsageConditions(mergedList, existing);
+
+                if (!updated.isEmpty()
+                        && existing.getAggregationFunction() != null
+                        && existing.getAggregationWindow() != null) {
+                    BillableMetricValidator.validateAll(existing.getUnitOfMeasure(),
+                            existing.getAggregationFunction(),
+                            existing.getAggregationWindow(),
+                            updated);
+                }
+
+                if (existing.getUsageConditions() == null) {
+                    existing.setUsageConditions(new ArrayList<>());
+                }
+                // Modify the managed collection in-place
+                existing.getUsageConditions().clear();
+                existing.getUsageConditions().addAll(updated);
             }
-            existing.setUsageConditions(updated);
         }
 
         BillableMetric saved = metricRepo.save(existing);
@@ -158,6 +224,12 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Metric not found with ID: " + id));
         metricRepo.delete(metric);
+        // Best-effort cascade: notify Rate Plan service to remove related rate plans
+        try {
+            ratePlanServiceClient.deleteByBillableMetricId(id);
+        } catch (Exception ex) {
+            // Do not block deletion on downstream cleanup issues
+        }
     }
 
     @Override
@@ -168,6 +240,12 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                 .stream()
                 .map(mapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public void deleteMetricsByProductId(Long productId) {
+        Long orgId = TenantContext.require();
+        metricRepo.deleteByOrganizationIdAndProductId(orgId, productId);
     }
 
     // ----------- private helpers unchanged (validateProductExists, etc.) -----------
@@ -195,6 +273,20 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private List<UsageCondition> enrichUsageConditions(List<UsageConditionDTO> dtos, BillableMetric metric) {
         UnitOfMeasure uom = metric.getUnitOfMeasure();
         return dtos.stream().map(dto -> {
+            // Basic validation to avoid NPEs and provide clear feedback
+            if (dto.getDimension() == null) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "usageConditions[].dimension is required");
+            }
+            if (dto.getOperator() == null || dto.getOperator().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "usageConditions[].operator is required");
+            }
+            if (dto.getValue() == null || dto.getValue().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "usageConditions[].value is required");
+            }
+
             DimensionDefinition dimEnum = dto.getDimension();
             if (!dimEnum.getUom().equalsIgnoreCase(uom.name().toLowerCase())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
