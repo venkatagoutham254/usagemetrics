@@ -15,4 +15,6 @@ public interface BillableMetricRepository extends JpaRepository<BillableMetric, 
 
     Optional<BillableMetric> findByBillableMetricIdAndOrganizationId(Long billableMetricId, Long organizationId);
 
+    void deleteByOrganizationIdAndProductId(Long organizationId, Long productId);
+
 }

@@ -14,5 +14,7 @@ public interface BillableMetricService {
 
     List<BillableMetricResponse> getMetricsByProductId(Long productId);
 
+    // Deletes all billable metrics for the given productId for the current tenant
+    void deleteMetricsByProductId(Long productId);
+
   }
-  
