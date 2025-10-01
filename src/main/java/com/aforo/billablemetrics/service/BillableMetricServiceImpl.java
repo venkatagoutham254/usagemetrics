@@ -204,6 +204,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BillableMetricResponse getMetricById(Long id) {
         Long orgId = TenantContext.require();
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
@@ -212,6 +213,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BillableMetricResponse> getAllMetrics() {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationId(orgId)
