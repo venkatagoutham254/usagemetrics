@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import com.aforo.billablemetrics.tenant.TenantContext;
 
 
 
@@ -35,6 +36,7 @@ public class ProductServiceClient {
             productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(Object.class)
                     .block();
@@ -50,6 +52,7 @@ public class ProductServiceClient {
             return productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductName)
@@ -65,6 +68,7 @@ public class ProductServiceClient {
             return productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductType)
@@ -75,20 +79,29 @@ public class ProductServiceClient {
         }
     }
 
-    public boolean isProductActive(Long productId) {
+    public boolean isProductReadyForMetrics(Long productId) {
         try {
             String status = productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getStatus)
                     .block();
-            return status != null && "ACTIVE".equalsIgnoreCase(status);
+            if (status == null) return false;
+            String s = status.trim().toUpperCase();
+            // Accept when product is at least configured
+            return s.equals("CONFIGURED") || s.equals("MEASURED") || s.equals("PRICED") || s.equals("LIVE");
         } catch (Exception e) {
             log.warn("Failed to fetch product status: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product status for ID: " + productId);
         }
+    }
+
+    // Backward compatibility: treat legacy "active" check as readiness
+    public boolean isProductActive(Long productId) {
+        return isProductReadyForMetrics(productId);
     }
 
     @Getter
