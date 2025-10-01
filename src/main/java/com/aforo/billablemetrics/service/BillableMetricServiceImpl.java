@@ -166,7 +166,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     @Override
     public BillableMetricResponse finalizeMetric(Long id) {
         Long orgId = TenantContext.require();
-
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
             .orElseThrow(() -> new ResourceNotFoundException("Metric not found with ID: " + id));
 
@@ -174,7 +173,10 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
+        // Strict checks: product must exist and be ready
+        validateProductExists(metric.getProductId());
         validateProductReadyForMetrics(metric.getProductId());
+
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
         if (metric.getAggregationFunction() == null)

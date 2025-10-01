@@ -40,10 +40,14 @@ aforo:
     allow-credentials: true
 
 logging:
-  level:
     com.aforo.billablemetrics.security: DEBUG
 
 # Remote Subscription Service base URL (used by SubscriptionServiceClient)
 subscriptions:
   service:
     url: http://13.113.70.183:8084
+
+# Remote Product/RatePlan Service base URL (used by ProductServiceClient & RatePlanServiceClient)
+product:
+  service:
+    url: ${PRODUCT_SERVICE_URL:http://54.238.204.246:8080}

@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -35,15 +37,23 @@ public class ProductServiceClient {
         try {
             productServiceWebClient.get()
                     .uri("/{id}", productId)
-                    .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
-                    .bodyToMono(Object.class)
+                    .toBodilessEntity()
                     .block();
             return true;
+        } catch (WebClientResponseException.NotFound e) {
+            return false; // product does not exist
+        } catch (WebClientResponseException e) {
+            HttpStatusCode code = e.getStatusCode();
+            if (code.value() == 401 || code.value() == 403) {
+                throw new ResponseStatusException(code, "Unauthorized to access Product API");
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product API error: " + code.value());
         } catch (Exception e) {
-            log.warn("Product validation failed: {}", e.getMessage());
-            return false;
+            log.warn("Product validation failed due to upstream issue: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Product service unavailable");
         }
     }
 
@@ -67,15 +77,23 @@ public class ProductServiceClient {
         try {
             return productServiceWebClient.get()
                     .uri("/{id}", productId)
-                    .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductType)
                     .block();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid productId: " + productId);
+        } catch (WebClientResponseException e) {
+            HttpStatusCode code = e.getStatusCode();
+            if (code.value() == 401 || code.value() == 403) {
+                throw new ResponseStatusException(code, "Unauthorized to access Product API");
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product API error: " + code.value());
         } catch (Exception e) {
             log.warn("Failed to fetch product type: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product type for ID: " + productId);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Product service unavailable");
         }
     }
 
@@ -83,7 +101,7 @@ public class ProductServiceClient {
         try {
             String status = productServiceWebClient.get()
                     .uri("/{id}", productId)
-                    .header("Authorization", getBearerToken())   // ✅ forward token
+                    .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
@@ -91,11 +109,18 @@ public class ProductServiceClient {
                     .block();
             if (status == null) return false;
             String s = status.trim().toUpperCase();
-            // Accept when product is at least configured
             return s.equals("CONFIGURED") || s.equals("MEASURED") || s.equals("PRICED") || s.equals("LIVE");
+        } catch (WebClientResponseException.NotFound e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid productId: " + productId);
+        } catch (WebClientResponseException e) {
+            HttpStatusCode code = e.getStatusCode();
+            if (code.value() == 401 || code.value() == 403) {
+                throw new ResponseStatusException(code, "Unauthorized to access Product API");
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product API error: " + code.value());
         } catch (Exception e) {
             log.warn("Failed to fetch product status: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product status for ID: " + productId);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Product service unavailable");
         }
     }
 
