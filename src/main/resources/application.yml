@@ -34,3 +34,8 @@ aforo:
 logging:
   level:
     com.aforo.billablemetrics.security: DEBUG
+
+# Remote Subscription Service base URL (used by SubscriptionServiceClient)
+subscriptions:
+  service:
+    url: http://13.113.70.183:8084

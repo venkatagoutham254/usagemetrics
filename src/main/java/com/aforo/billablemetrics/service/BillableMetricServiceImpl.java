@@ -30,6 +30,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private final BillableMetricMapper mapper;
     private final ProductServiceClient productClient;
     private final RatePlanServiceClient ratePlanServiceClient;
+    private final com.aforo.billablemetrics.webclient.SubscriptionServiceClient subscriptionServiceClient;
 
     @Override
     public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
@@ -37,7 +38,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
         if (request.getProductId() != null) {
             validateProductExists(request.getProductId());
-            validateProductActive(request.getProductId());
+            validateProductReadyForMetrics(request.getProductId());
             if (request.getUnitOfMeasure() != null) {
                 validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
             }
@@ -173,7 +174,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
-        validateProductActive(metric.getProductId());
+        validateProductReadyForMetrics(metric.getProductId());
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
         if (metric.getAggregationFunction() == null)
@@ -196,7 +197,8 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
         );
 
-        metric.setStatus(MetricStatus.ACTIVE);
+        // Explicit finalize moves lifecycle from DRAFT -> CONFIGURED
+        metric.setStatus(MetricStatus.CONFIGURED);
         BillableMetric saved = metricRepo.save(metric);
         return buildResponse(saved);
     }
@@ -238,7 +240,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationIdAndProductId(orgId, productId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(this::buildResponse)
                 .toList();
     }
 
@@ -255,10 +257,10 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         }
     }
 
-    private void validateProductActive(Long productId) {
-        if (!productClient.isProductActive(productId)) {
+    private void validateProductReadyForMetrics(Long productId) {
+        if (!productClient.isProductReadyForMetrics(productId)) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Product must be ACTIVE to create or finalize billable metrics");
+                    "Product is not ready to attach billable metrics. Ensure it is configured.");
         }
     }
 
@@ -316,7 +318,33 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
     private BillableMetricResponse buildResponse(BillableMetric metric) {
         BillableMetricResponse response = mapper.toResponse(metric);
-        response.setProductName(productClient.getProductNameById(metric.getProductId()));
+        if (metric.getProductId() != null) {
+            response.setProductName(productClient.getProductNameById(metric.getProductId()));
+        }
+        // Derive effective status based on persisted status + external signals
+        response.setStatus(deriveStatusFor(metric));
         return response;
+    }
+
+    private MetricStatus deriveStatusFor(BillableMetric metric) {
+        MetricStatus stored = metric.getStatus() == null ? MetricStatus.DRAFT : metric.getStatus();
+        if (stored == MetricStatus.DRAFT) return MetricStatus.DRAFT;
+
+        Long metricId = metric.getBillableMetricId();
+        Long productId = metric.getProductId();
+
+        boolean hasActiveRatePlan = false;
+        try {
+            hasActiveRatePlan = ratePlanServiceClient.hasActiveRatePlanForMetric(productId, metricId);
+        } catch (Exception ignored) { hasActiveRatePlan = false; }
+        if (!hasActiveRatePlan) return MetricStatus.CONFIGURED;
+
+        boolean hasActiveSubscription = false;
+        try {
+            hasActiveSubscription = subscriptionServiceClient.hasActiveSubscriptionForProduct(productId);
+        } catch (Exception ignored) { hasActiveSubscription = false; }
+        if (!hasActiveSubscription) return MetricStatus.PRICED;
+
+        return MetricStatus.LIVE;
     }
 }
