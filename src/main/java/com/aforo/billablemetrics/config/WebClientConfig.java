@@ -14,13 +14,25 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
+    @Value("${clients.http.connectTimeoutMs:3000}")
+    private int connectTimeoutMs;
+
+    @Value("${clients.http.responseTimeoutMs:5000}")
+    private long responseTimeoutMs;
+
+    @Value("${clients.http.readTimeoutSec:5}")
+    private int readTimeoutSec;
+
+    @Value("${clients.http.writeTimeoutSec:5}")
+    private int writeTimeoutSec;
+
     private WebClient build(WebClient.Builder builder, String baseUrl) {
         HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-                .responseTimeout(Duration.ofSeconds(5))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
+                .responseTimeout(Duration.ofMillis(responseTimeoutMs))
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(5))
-                        .addHandlerLast(new WriteTimeoutHandler(5))
+                        .addHandlerLast(new ReadTimeoutHandler(readTimeoutSec))
+                        .addHandlerLast(new WriteTimeoutHandler(writeTimeoutSec))
                 );
         return builder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))

@@ -40,6 +40,7 @@ aforo:
     allow-credentials: true
 
 logging:
+  level:
     com.aforo.billablemetrics.security: DEBUG
 
 # Remote Subscription Service base URL (used by SubscriptionServiceClient)
@@ -51,3 +52,11 @@ subscriptions:
 product:
   service:
     url: ${PRODUCT_SERVICE_URL:http://54.238.204.246:8080}
+
+# HTTP client timeouts (optional; defaults are set in WebClientConfig)
+clients:
+  http:
+    connectTimeoutMs: ${HTTP_CONNECT_TIMEOUT_MS:3000}
+    responseTimeoutMs: ${HTTP_RESPONSE_TIMEOUT_MS:7000}
+    readTimeoutSec: ${HTTP_READ_TIMEOUT_SEC:7}
+    writeTimeoutSec: ${HTTP_WRITE_TIMEOUT_SEC:7}
