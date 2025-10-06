@@ -36,7 +36,10 @@ public class ProductServiceClient {
     public boolean productExists(Long productId) {
         try {
             productServiceWebClient.get()
-                    .uri("/{id}", productId)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{id}")
+                            .queryParam("lite", true)
+                            .build(productId))
                     .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
@@ -66,7 +69,10 @@ public class ProductServiceClient {
     public String getProductNameById(Long productId) {
         try {
             return productServiceWebClient.get()
-                    .uri("/{id}", productId)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{id}")
+                            .queryParam("lite", true)
+                            .build(productId))
                     .header("Authorization", getBearerToken())   // ✅ forward token
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
@@ -90,7 +96,10 @@ public class ProductServiceClient {
     public String getProductTypeById(Long productId) {
         try {
             return productServiceWebClient.get()
-                    .uri("/{id}", productId)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{id}")
+                            .queryParam("lite", true)
+                            .build(productId))
                     .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
@@ -119,7 +128,10 @@ public class ProductServiceClient {
     public boolean isProductReadyForMetrics(Long productId) {
         try {
             String status = productServiceWebClient.get()
-                    .uri("/{id}", productId)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{id}")
+                            .queryParam("lite", true)
+                            .build(productId))
                     .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
@@ -154,7 +166,9 @@ public class ProductServiceClient {
     private ProductResponse fetchProductViaList(Long productId) {
         try {
             ProductResponse[] list = productServiceWebClient.get()
-                    .uri("")
+                    .uri(uriBuilder -> uriBuilder
+                            .queryParam("lite", true)
+                            .build())
                     .header("Authorization", getBearerToken())
                     .header("X-Organization-Id", String.valueOf(TenantContext.require()))
                     .retrieve()
