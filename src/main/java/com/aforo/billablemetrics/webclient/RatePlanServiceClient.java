@@ -30,8 +30,11 @@ public class RatePlanServiceClient {
         try {
             ratePlanServiceWebClient.delete()
                     .uri("/internal/billable-metrics/{metricId}", billableMetricId)
-                    .header("Authorization", getBearerToken())
-                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
+                    .headers(h -> {
+                        String token = getBearerToken();
+                        if (token != null) h.set("Authorization", token);
+                        try { h.set("X-Organization-Id", String.valueOf(TenantContext.require())); } catch (Exception ignored) {}
+                    })
                     .retrieve()
                     .toBodilessEntity()
                     .block();
@@ -41,29 +44,52 @@ public class RatePlanServiceClient {
         }
     }
 
-    // Returns true if there's at least one ACTIVE rate plan for the given product that is linked to the metric
+    // Returns true if there's at least one CONFIGURED/LIVE rate plan for the given product linked to the metric
     public boolean hasActiveRatePlanForMetric(Long productId, Long billableMetricId) {
+        Long orgId = null;
+        try { orgId = TenantContext.require(); } catch (Exception ignored) {}
+        return hasActiveRatePlanForMetric(productId, billableMetricId, orgId);
+    }
+
+    // Overload with explicit orgId for reliable cross-service tenant propagation
+    public boolean hasActiveRatePlanForMetric(Long productId, Long billableMetricId, Long orgId) {
         try {
             RatePlanSummary[] plans = ratePlanServiceWebClient.get()
                     .uri("/product/{productId}", productId)
-                    .header("Authorization", getBearerToken())
-                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
+                    .headers(h -> {
+                        String token = getBearerToken();
+                        if (token != null) h.set("Authorization", token);
+                        if (orgId != null) h.set("X-Organization-Id", String.valueOf(orgId));
+                    })
                     .retrieve()
                     .bodyToMono(RatePlanSummary[].class)
                     .block();
+            // Fallback: if product-scoped list is null/empty, query all and filter
+            if (plans == null || plans.length == 0) {
+                plans = ratePlanServiceWebClient.get()
+                        .uri("")
+                        .headers(h -> {
+                            String token = getBearerToken();
+                            if (token != null) h.set("Authorization", token);
+                            if (orgId != null) h.set("X-Organization-Id", String.valueOf(orgId));
+                        })
+                        .retrieve()
+                        .bodyToMono(RatePlanSummary[].class)
+                        .block();
+            }
             if (plans == null) return false;
             for (RatePlanSummary p : plans) {
                 if (p == null) continue;
                 String status = p.getStatus() == null ? null : p.getStatus().trim().toUpperCase();
-                if ("ACTIVE".equals(status)) {
-                    if (billableMetricId == null) return true; // any active plan counts
+                if ("CONFIGURED".equals(status) || "LIVE".equals(status)) {
+                    if (billableMetricId == null) return true;
                     Long linked = p.getBillableMetricId();
                     if (linked != null && linked.equals(billableMetricId)) return true;
                 }
             }
             return false;
         } catch (Exception e) {
-            log.warn("Failed to check active rate plans for product {} / metric {}: {}", productId, billableMetricId, e.getMessage());
+            log.warn("Failed to check active rate plans for product {} / metric {} (orgId={}): {}", productId, billableMetricId, orgId, e.getMessage());
             return false;
         }
     }
