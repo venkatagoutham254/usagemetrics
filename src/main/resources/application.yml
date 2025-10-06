@@ -1,3 +1,11 @@
+read:
+  # Skip calling external services (Product/RatePlan/Subscriptions) when building GET responses
+  # to keep reads fast and resilient during upstream outages
+  skipExternalEnrichment: true
+
+finalize:
+  # Allow finalize to proceed when Product API is temporarily unavailable (network/5xx/timeout)
+  allowWhenProductApiUnavailable: true
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5439/billable_metrics_db}
@@ -57,6 +65,6 @@ product:
 clients:
   http:
     connectTimeoutMs: ${HTTP_CONNECT_TIMEOUT_MS:3000}
-    responseTimeoutMs: ${HTTP_RESPONSE_TIMEOUT_MS:7000}
-    readTimeoutSec: ${HTTP_READ_TIMEOUT_SEC:7}
+    responseTimeoutMs: ${HTTP_RESPONSE_TIMEOUT_MS:10000}
+    readTimeoutSec: ${HTTP_READ_TIMEOUT_SEC:10}
     writeTimeoutSec: ${HTTP_WRITE_TIMEOUT_SEC:7}

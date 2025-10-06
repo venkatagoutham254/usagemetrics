@@ -12,6 +12,7 @@ import com.aforo.billablemetrics.enums.*;
 import com.aforo.billablemetrics.util.*;
 import com.aforo.billablemetrics.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,12 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private final ProductServiceClient productClient;
     private final RatePlanServiceClient ratePlanServiceClient;
     private final com.aforo.billablemetrics.webclient.SubscriptionServiceClient subscriptionServiceClient;
+
+    @Value("${aforo.read.skipExternalEnrichment:false}")
+    private boolean skipExternalEnrichment;
+
+    @Value("${aforo.finalize.allowWhenProductApiUnavailable:false}")
+    private boolean allowFinalizeOnProductDown;
 
     @Override
     public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
@@ -173,9 +180,21 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
-        // Strict checks: product must exist and be ready
-        validateProductExists(metric.getProductId());
-        validateProductReadyForMetrics(metric.getProductId());
+        // Strict checks: product must exist and be ready, with optional tolerance for upstream outages
+        try {
+            validateProductExists(metric.getProductId());
+            validateProductReadyForMetrics(metric.getProductId());
+        } catch (ResponseStatusException ex) {
+            HttpStatus status = (HttpStatus) ex.getStatusCode();
+            boolean upstreamDown = status == HttpStatus.BAD_GATEWAY
+                    || status == HttpStatus.GATEWAY_TIMEOUT
+                    || status == HttpStatus.SERVICE_UNAVAILABLE;
+            if (allowFinalizeOnProductDown && upstreamDown) {
+                // Proceed despite upstream outage
+            } else {
+                throw ex;
+            }
+        }
 
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
@@ -321,6 +340,12 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     private BillableMetricResponse buildResponse(BillableMetric metric) {
+        if (skipExternalEnrichment) {
+            BillableMetricResponse response = mapper.toResponse(metric);
+            response.setStatus(metric.getStatus() == null ? MetricStatus.DRAFT : metric.getStatus());
+            return response;
+        }
+
         BillableMetricResponse response = mapper.toResponse(metric);
         if (metric.getProductId() != null) {
             response.setProductName(productClient.getProductNameById(metric.getProductId()));
