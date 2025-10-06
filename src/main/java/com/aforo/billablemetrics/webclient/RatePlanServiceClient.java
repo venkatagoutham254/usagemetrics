@@ -57,6 +57,28 @@ public class RatePlanServiceClient {
     // Overload with explicit orgId for reliable cross-service tenant propagation
     public boolean hasActiveRatePlanForMetric(Long productId, Long billableMetricId, Long orgId) {
         try {
+            // 1) Fast path: dedicated internal linkage check
+            try {
+                Boolean linked = ratePlanServiceWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .pathSegment("internal", "active-link")
+                                .queryParam("productId", productId)
+                                .queryParam("billableMetricId", billableMetricId)
+                                .build())
+                        .headers(h -> {
+                            String token = getBearerToken();
+                            if (token != null) h.set("Authorization", token);
+                            if (orgId != null) h.set("X-Organization-Id", String.valueOf(orgId));
+                        })
+                        .retrieve()
+                        .bodyToMono(Boolean.class)
+                        .block();
+                if (Boolean.TRUE.equals(linked)) return true;
+            } catch (Exception ignored) {
+                // proceed to list-based fallbacks
+            }
+
+            // 2) Fallback: product-scoped list
             RatePlanSummary[] plans = ratePlanServiceWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .pathSegment("product")
@@ -70,8 +92,22 @@ public class RatePlanServiceClient {
                     .retrieve()
                     .bodyToMono(RatePlanSummary[].class)
                     .block();
-            // Fallback: if product-scoped list is null/empty, query all and filter
-            if (plans == null || plans.length == 0) {
+            // 3) Fallback: if product-scoped list is null/empty OR doesn't contain a matching metric linkage,
+            // query all plans and filter by metric id
+            boolean matchedInProductScope = false;
+            if (plans != null) {
+                for (RatePlanSummary p : plans) {
+                    if (p == null) continue;
+                    String status = p.getStatus() == null ? null : p.getStatus().trim().toUpperCase();
+                    if ("CONFIGURED".equals(status) || "LIVE".equals(status)) {
+                        if (billableMetricId == null) { matchedInProductScope = true; break; }
+                        Long linked = p.getBillableMetricId();
+                        if (linked != null && linked.equals(billableMetricId)) { matchedInProductScope = true; break; }
+                    }
+                }
+            }
+
+            if (!matchedInProductScope) {
                 plans = ratePlanServiceWebClient.get()
                         .uri(uriBuilder -> uriBuilder.build())
                         .headers(h -> {
