@@ -33,6 +33,33 @@ public class ProductServiceClient {
         return null;
     }
 
+    // Single-call lite fetch to avoid multiple round trips per request
+    public ProductResponse getProductLite(Long productId) {
+        try {
+            return productServiceWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{id}")
+                            .queryParam("lite", true)
+                            .build(productId))
+                    .header("Authorization", getBearerToken())
+                    .header("X-Organization-Id", String.valueOf(TenantContext.require()))
+                    .retrieve()
+                    .bodyToMono(ProductResponse.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            HttpStatusCode code = e.getStatusCode();
+            if (code.value() == 404) return null;
+            if (code.is5xxServerError()) {
+                return fetchProductViaList(productId);
+            }
+            log.warn("getProductLite failed ({}): {}", code.value(), e.getMessage());
+            return null;
+        } catch (Exception e) {
+            log.warn("getProductLite upstream issue: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean productExists(Long productId) {
         try {
             productServiceWebClient.get()
@@ -195,7 +222,7 @@ public class ProductServiceClient {
     @Getter
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ProductResponse {
+    public static class ProductResponse {
         private Long productId;
         private String productName;
         private String productType; // 🔥 ensure backend sends this

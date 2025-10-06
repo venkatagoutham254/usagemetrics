@@ -173,9 +173,16 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
-        // Strict checks: product must exist and be ready
-        validateProductExists(metric.getProductId());
-        validateProductReadyForMetrics(metric.getProductId());
+        // Single round-trip to Product API for existence, readiness and type
+        com.aforo.billablemetrics.webclient.ProductServiceClient.ProductResponse prod =
+                productClient.getProductLite(metric.getProductId());
+        if (prod == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid productId: " + metric.getProductId());
+        String prodStatus = prod.getStatus() == null ? null : prod.getStatus().trim().toUpperCase();
+        boolean ready = prodStatus != null && (prodStatus.equals("CONFIGURED") || prodStatus.equals("MEASURED") || prodStatus.equals("PRICED") || prodStatus.equals("LIVE"));
+        if (!ready)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Product is not ready to attach billable metrics. Ensure it is configured.");
 
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
@@ -192,11 +199,19 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                         "usageConditions are required when billingCriteria=BILL_BASED_ON_USAGE_CONDITIONS");
         }
 
+        // Validate against product type using the single fetched product record
+        UnitOfMeasure uom = metric.getUnitOfMeasure();
+        String productType = normalizeProductType(prod.getProductType());
+        if (!UnitOfMeasureValidator.isValidUOMForProductType(productType, uom)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "UnitOfMeasure " + uom + " is not valid for ProductType: " + productType);
+        }
+
         BillableMetricValidator.validateAll(
-            metric.getUnitOfMeasure(),
-            metric.getAggregationFunction(),
-            metric.getAggregationWindow(),
-            metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
+                metric.getUnitOfMeasure(),
+                metric.getAggregationFunction(),
+                metric.getAggregationWindow(),
+                metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
         );
 
         // Explicit finalize moves lifecycle from DRAFT -> CONFIGURED
