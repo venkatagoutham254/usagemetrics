@@ -29,7 +29,10 @@ public class RatePlanServiceClient {
     public void deleteByBillableMetricId(Long billableMetricId) {
         try {
             ratePlanServiceWebClient.delete()
-                    .uri("/internal/billable-metrics/{metricId}", billableMetricId)
+                    .uri(uriBuilder -> uriBuilder
+                            .pathSegment("internal", "billable-metrics")
+                            .path("/{metricId}")
+                            .build(billableMetricId))
                     .headers(h -> {
                         String token = getBearerToken();
                         if (token != null) h.set("Authorization", token);
@@ -55,7 +58,10 @@ public class RatePlanServiceClient {
     public boolean hasActiveRatePlanForMetric(Long productId, Long billableMetricId, Long orgId) {
         try {
             RatePlanSummary[] plans = ratePlanServiceWebClient.get()
-                    .uri("/product/{productId}", productId)
+                    .uri(uriBuilder -> uriBuilder
+                            .pathSegment("product")
+                            .path("/{productId}")
+                            .build(productId))
                     .headers(h -> {
                         String token = getBearerToken();
                         if (token != null) h.set("Authorization", token);
@@ -67,7 +73,7 @@ public class RatePlanServiceClient {
             // Fallback: if product-scoped list is null/empty, query all and filter
             if (plans == null || plans.length == 0) {
                 plans = ratePlanServiceWebClient.get()
-                        .uri("")
+                        .uri(uriBuilder -> uriBuilder.build())
                         .headers(h -> {
                             String token = getBearerToken();
                             if (token != null) h.set("Authorization", token);
