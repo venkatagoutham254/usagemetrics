@@ -339,7 +339,8 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
         boolean hasActiveRatePlan = false;
         try {
-            hasActiveRatePlan = ratePlanServiceClient.hasActiveRatePlanForMetric(productId, metricId);
+            Long orgId = metric.getOrganizationId();
+            hasActiveRatePlan = ratePlanServiceClient.hasActiveRatePlanForMetric(productId, metricId, orgId);
         } catch (Exception ignored) { hasActiveRatePlan = false; }
         if (!hasActiveRatePlan) return MetricStatus.CONFIGURED;
 
