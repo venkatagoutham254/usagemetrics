@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5439/billable_metrics_db}
+    # ENV takes precedence in Docker (billable_metrics_pg:5432).
+    # For local dev (outside Docker), make the fallback match the exposed 5434:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/billable_metrics_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     hikari:
@@ -14,6 +16,9 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
+    properties:
+      # Align JDBC layer with DB/Jackson timezones
+      hibernate.jdbc.time_zone: Asia/Kolkata
   jackson:
     date-format: dd MMM, yyyy HH:mm z
     time-zone: Asia/Kolkata
@@ -23,17 +28,16 @@ spring:
 
 application:
   name: billable-metrics-service
+
 server:
   port: 8081
 
 aforo:
   jwt:
     issuer: aforo-billablemetrics
-    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}
     expiryMinutes: 120
   cors:
-    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
-    # Include your frontend origin(s). Add https variants if applicable.
     allowed-origins: "http://13.115.248.133,http://localhost:3000"
     allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     allowed-headers: "Authorization,Content-Type,X-Organization-Id"
@@ -43,17 +47,14 @@ logging:
   level:
     com.aforo.billablemetrics.security: DEBUG
 
-# Remote Subscription Service base URL (used by SubscriptionServiceClient)
 subscriptions:
   service:
     url: http://13.113.70.183:8084
 
-# Remote Product/RatePlan Service base URL (used by ProductServiceClient & RatePlanServiceClient)
 product:
   service:
     url: ${PRODUCT_SERVICE_URL:http://54.238.204.246:8080}
 
-# HTTP client timeouts (optional; defaults are set in WebClientConfig)
 clients:
   http:
     connectTimeoutMs: ${HTTP_CONNECT_TIMEOUT_MS:3000}

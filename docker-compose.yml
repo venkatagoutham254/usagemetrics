@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   billable_metrics_pg:
     image: postgres:15
@@ -8,10 +9,18 @@ services:
       POSTGRES_DB: billable_metrics_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      TZ: Asia/Kolkata               # keep container clock aligned
     ports:
-      - "5434:5432"
+      - "5434:5432"                  # host:container
     networks:
       - billable-metrics-network
+    volumes:
+      - billable_metrics_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d billable_metrics_db || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   billable_metrics_app:
     build:
@@ -24,11 +33,18 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://billable_metrics_pg:5432/billable_metrics_db
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+      - TZ=Asia/Kolkata              # keep app clock aligned
+      # Optional: pin JVM timezone at runtime
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Asia/Kolkata
     depends_on:
-      - billable_metrics_pg
+      billable_metrics_pg:
+        condition: service_healthy    # start after DB is ready
     networks:
       - billable-metrics-network
 
 networks:
   billable-metrics-network:
     driver: bridge
+
+volumes:
+  billable_metrics_data:
