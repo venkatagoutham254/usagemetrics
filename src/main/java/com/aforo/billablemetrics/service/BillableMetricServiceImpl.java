@@ -35,7 +35,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
         if (request.getProductId() != null) {
             validateProductExists(request.getProductId());
-            validateProductActive(request.getProductId());
+            validateProductReadyForMetrics(request.getProductId());
             if (request.getUnitOfMeasure() != null) {
                 validateUOMMatchesProductType(request.getProductId(), request.getUnitOfMeasure());
             }
@@ -146,7 +146,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     @Override
     public BillableMetricResponse finalizeMetric(Long id) {
         Long orgId = TenantContext.require();
-
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
             .orElseThrow(() -> new ResourceNotFoundException("Metric not found with ID: " + id));
 
@@ -154,7 +153,17 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "metricName is required");
         if (metric.getProductId() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "productId is required");
-        validateProductActive(metric.getProductId());
+        // Single round-trip to Product API for existence, readiness and type
+        com.aforo.billablemetrics.webclient.ProductServiceClient.ProductResponse prod =
+                productClient.getProductLite(metric.getProductId());
+        if (prod == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid productId: " + metric.getProductId());
+        String prodStatus = prod.getStatus() == null ? null : prod.getStatus().trim().toUpperCase();
+        boolean ready = prodStatus != null && (prodStatus.equals("CONFIGURED") || prodStatus.equals("MEASURED") || prodStatus.equals("PRICED") || prodStatus.equals("LIVE"));
+        if (!ready)
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Product is not ready to attach billable metrics. Ensure it is configured.");
+
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
         if (metric.getAggregationFunction() == null)
@@ -170,19 +179,29 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                         "usageConditions are required when billingCriteria=BILL_BASED_ON_USAGE_CONDITIONS");
         }
 
+        // Validate against product type using the single fetched product record
+        UnitOfMeasure uom = metric.getUnitOfMeasure();
+        String productType = normalizeProductType(prod.getProductType());
+        if (!UnitOfMeasureValidator.isValidUOMForProductType(productType, uom)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "UnitOfMeasure " + uom + " is not valid for ProductType: " + productType);
+        }
+
         BillableMetricValidator.validateAll(
-            metric.getUnitOfMeasure(),
-            metric.getAggregationFunction(),
-            metric.getAggregationWindow(),
-            metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
+                metric.getUnitOfMeasure(),
+                metric.getAggregationFunction(),
+                metric.getAggregationWindow(),
+                metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
         );
 
-        metric.setStatus(MetricStatus.ACTIVE);
+        // Explicit finalize moves lifecycle from DRAFT -> CONFIGURED
+        metric.setStatus(MetricStatus.CONFIGURED);
         BillableMetric saved = metricRepo.save(metric);
         return buildResponse(saved);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BillableMetricResponse getMetricById(Long id) {
         Long orgId = TenantContext.require();
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
@@ -191,6 +210,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BillableMetricResponse> getAllMetrics() {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationId(orgId)
@@ -219,7 +239,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationIdAndProductId(orgId, productId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(this::buildResponse)
                 .toList();
     }
 
@@ -236,10 +256,10 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         }
     }
 
-    private void validateProductActive(Long productId) {
-        if (!productClient.isProductActive(productId)) {
+    private void validateProductReadyForMetrics(Long productId) {
+        if (!productClient.isProductReadyForMetrics(productId)) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Product must be ACTIVE to create or finalize billable metrics");
+                    "Product is not ready to attach billable metrics. Ensure it is configured.");
         }
     }
 
@@ -329,7 +349,38 @@ public class BillableMetricServiceImpl implements BillableMetricService {
 
     private BillableMetricResponse buildResponse(BillableMetric metric) {
         BillableMetricResponse response = mapper.toResponse(metric);
-        response.setProductName(productClient.getProductNameById(metric.getProductId()));
+        if (metric.getProductId() != null) {
+            response.setProductName(productClient.getProductNameById(metric.getProductId()));
+        }
+        // Derive effective status based on persisted status + external signals
+        response.setStatus(deriveStatusFor(metric));
         return response;
     }
+
+    private MetricStatus deriveStatusFor(BillableMetric metric) {
+        MetricStatus stored = metric.getStatus() == null ? MetricStatus.DRAFT : metric.getStatus();
+        if (stored == MetricStatus.DRAFT) return MetricStatus.DRAFT;
+
+        Long metricId = metric.getBillableMetricId();
+        Long productId = metric.getProductId();
+
+        boolean hasActiveRatePlan = false;
+        try {
+            Long orgId = metric.getOrganizationId();
+            hasActiveRatePlan = ratePlanServiceClient.hasActiveRatePlanForMetric(productId, metricId, orgId);
+        } catch (Exception ignored) { hasActiveRatePlan = false; }
+        if (!hasActiveRatePlan) return MetricStatus.CONFIGURED;
+
+        boolean hasActiveSubscription = false;
+        try {
+            hasActiveSubscription = subscriptionServiceClient.hasActiveSubscriptionForProduct(productId);
+        } catch (Exception ignored) { hasActiveSubscription = false; }
+        if (!hasActiveSubscription) return MetricStatus.PRICED;
+
+        return MetricStatus.LIVE;
+    }
 }
+
+
+
+
