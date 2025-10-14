@@ -66,7 +66,7 @@ public class BillableMetric {
     private LocalDateTime lastUpdated;
 
     @Column(name = "organization_id", nullable = false)
-private Long organizationId;
+    private Long organizationId;
 
 
     @PrePersist
