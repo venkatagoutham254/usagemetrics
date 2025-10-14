@@ -30,7 +30,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private final BillableMetricMapper mapper;
     private final ProductServiceClient productClient;
     private final RatePlanServiceClient ratePlanServiceClient;
-    private final com.aforo.billablemetrics.webclient.SubscriptionServiceClient subscriptionServiceClient;
 
     @Override
     public BillableMetricResponse createMetric(CreateBillableMetricRequest request) {
@@ -313,15 +312,55 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Dimension " + dimEnum.getDimension() + " is not valid for UnitOfMeasure: " + uom);
             }
-            if (!UnitOfMeasureValidator.isValidOperatorForDimension(dimEnum, dto.getOperator())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Operator '" + dto.getOperator() + "' is not valid for dimension " + dimEnum.getDimension());
+
+            // Set default operator if not provided
+            String operator = dto.getOperator();
+            if (operator == null || operator.isBlank()) {
+                operator = getDefaultOperatorForDimension(dimEnum);
             }
-            UsageCondition condition = mapper.toEntity(dto);
+
+            // Set default value if not provided
+            String value = dto.getValue();
+            if (value == null || value.isBlank()) {
+                value = getDefaultValueForDimension(dimEnum);
+            }
+
+            // Validate the operator (either provided or default)
+            if (!UnitOfMeasureValidator.isValidOperatorForDimension(dimEnum, operator)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Operator '" + operator + "' is not valid for dimension " + dimEnum.getDimension());
+            }
+
+            // Create the usage condition with the final values
+            UsageCondition condition = new UsageCondition();
+            condition.setDimension(dimEnum);
+            condition.setOperator(operator);
+            condition.setValue(value);
             condition.setBillableMetric(metric);
             condition.setType(dimEnum.getType());
             return condition;
         }).toList();
+    }
+
+    private String getDefaultOperatorForDimension(DimensionDefinition dimension) {
+        // Return the first valid operator for the dimension as default
+        List<String> validOperators = dimension.getValidOperators();
+        if (validOperators != null && !validOperators.isEmpty()) {
+            return validOperators.get(0);
+        }
+        return "equals"; // fallback default
+    }
+
+    private String getDefaultValueForDimension(DimensionDefinition dimension) {
+        // Provide sensible default values based on dimension type
+        return switch (dimension.getType()) {
+            case NUMBER -> "0";
+            case STRING -> "";
+            case BOOLEAN -> "true";
+            case DATE -> "2024-01-01";
+            case ENUM -> "default";
+            default -> "";
+        };
     }
 
     private String normalizeProductType(String rawType) {

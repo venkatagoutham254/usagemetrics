@@ -14,29 +14,34 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${clients.http.connectTimeoutMs:3000}")
-    private int connectTimeoutMs;
+    @Bean
+    public WebClient productServiceWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://54.238.204.246:8080/api/products") // Product client
+                .build();
+    }
 
-    @Value("${clients.http.responseTimeoutMs:5000}")
-    private long responseTimeoutMs;
+    @Bean
+    public WebClient ratePlanServiceWebClient() {
+        // Uses the same Product service host/port; rate plan API is in the same service
+        return WebClient.builder()
+                .baseUrl("http://54.238.204.246:8080/api/rate-plans")
+                .build();
+    }
 
-    @Value("${clients.http.readTimeoutSec:5}")
-    private int readTimeoutSec;
+    @Bean
+    public WebClient ratePlanServiceWebClient() {
+        // Uses the same Product service host/port; rate plan API is in the same service
+        return WebClient.builder()
+                .baseUrl("http://54.238.204.246:8080/api/rate-plans")
+                .build();
+    }
 
-    @Value("${clients.http.writeTimeoutSec:5}")
-    private int writeTimeoutSec;
-
-    private WebClient build(WebClient.Builder builder, String baseUrl) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
-                .responseTimeout(Duration.ofMillis(responseTimeoutMs))
-                .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(readTimeoutSec))
-                        .addHandlerLast(new WriteTimeoutHandler(writeTimeoutSec))
-                );
-        return builder
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .baseUrl(baseUrl)
+    @Bean
+    public WebClient ratePlanServiceWebClient() {
+        // Uses the same Product service host/port; rate plan API is in the same service
+        return WebClient.builder()
+                .baseUrl("http://54.238.204.246:8080/api/rate-plans")
                 .build();
     }
 
