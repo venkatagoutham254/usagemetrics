@@ -19,8 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -87,17 +85,13 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                 }
                 existing.getUsageConditions().clear();
             } else {
-                // Build a map of merged DTOs keyed by dimension, starting from current state
-                Map<DimensionDefinition, UsageConditionDTO> merged = new HashMap<>();
-                if (existing.getUsageConditions() != null) {
-                    for (UsageCondition uc : existing.getUsageConditions()) {
-                        UsageConditionDTO dto = mapper.toDto(uc);
-                        merged.put(dto.getDimension(), dto);
-                    }
-                }
-
+                // Process the new usage conditions from the request
+                // This replaces all existing conditions with the new ones, allowing multiple conditions with the same dimension name
+                List<UsageConditionDTO> newConditions = new ArrayList<>();
+                
                 int existingCount = existing.getUsageConditions() == null ? 0 : existing.getUsageConditions().size();
 
+                // Process each condition from the request
                 for (UsageConditionDTO patch : request.getUsageConditions()) {
                     DimensionDefinition targetDim = patch.getDimension();
                     if (targetDim == null) {
@@ -111,34 +105,21 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                         }
                     }
 
-                    UsageConditionDTO base = merged.getOrDefault(targetDim, new UsageConditionDTO());
-                    // Ensure dimension is set
-                    base.setDimension(targetDim);
-                    // Apply partial overrides
-                    if (patch.getOperator() != null && !patch.getOperator().isBlank()) {
-                        base.setOperator(patch.getOperator());
-                    }
-                    if (patch.getValue() != null && !patch.getValue().isBlank()) {
-                        base.setValue(patch.getValue());
-                    }
+                    // Create a new condition DTO with complete information
+                    UsageConditionDTO newCondition = new UsageConditionDTO();
+                    newCondition.setDimension(targetDim);
+                    
+                    // Set operator and value from patch (these can be null/blank, will be handled by enrichUsageConditions)
+                    newCondition.setOperator(patch.getOperator());
+                    newCondition.setValue(patch.getValue());
 
-                    // After merge, ensure the condition is complete
-                    if (base.getOperator() == null || base.getOperator().isBlank()) {
-                        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                                "usageConditions[].operator is required after merge for dimension: " + targetDim.getDimension());
-                    }
-                    if (base.getValue() == null || base.getValue().isBlank()) {
-                        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                                "usageConditions[].value is required after merge for dimension: " + targetDim.getDimension());
-                    }
-
-                    // Put back
-                    merged.put(targetDim, base);
+                    // Add the new condition to the list (allows multiple with same dimension)
+                    // The enrichUsageConditions method will handle setting defaults for missing operator/value
+                    newConditions.add(newCondition);
                 }
 
-                // Validate and enrich all merged DTOs against UOM and operators
-                List<UsageConditionDTO> mergedList = new ArrayList<>(merged.values());
-                List<UsageCondition> updated = enrichUsageConditions(mergedList, existing);
+                // Validate and enrich all DTOs against UOM and operators
+                List<UsageCondition> updated = enrichUsageConditions(newConditions, existing);
 
                 if (!updated.isEmpty()
                         && existing.getAggregationFunction() != null
@@ -297,14 +278,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
             if (dto.getDimension() == null) {
                 throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
                         "usageConditions[].dimension is required");
-            }
-            if (dto.getOperator() == null || dto.getOperator().isBlank()) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "usageConditions[].operator is required");
-            }
-            if (dto.getValue() == null || dto.getValue().isBlank()) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "usageConditions[].value is required");
             }
 
             DimensionDefinition dimEnum = dto.getDimension();
