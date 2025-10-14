@@ -227,5 +227,17 @@ public class ProductServiceClient {
         private String productName;
         private String productType; // 🔥 ensure backend sends this
         private String status; // product status from Product API
+        
+        // Explicit getters for GitHub Actions compatibility
+        public Long getProductId() { return productId; }
+        public String getProductName() { return productName; }
+        public String getProductType() { return productType; }
+        public String getStatus() { return status; }
+        
+        // Explicit setters for GitHub Actions compatibility
+        public void setProductId(Long productId) { this.productId = productId; }
+        public void setProductName(String productName) { this.productName = productName; }
+        public void setProductType(String productType) { this.productType = productType; }
+        public void setStatus(String status) { this.status = status; }
     }
 }
