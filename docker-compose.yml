@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   billable_metrics_pg:
     image: postgres:15
