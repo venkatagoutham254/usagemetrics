@@ -17,16 +17,25 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: billable_metrics_app
+    restart: always
     ports:
       - "8081:8081"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://billable_metrics_pg:5432/billable_metrics_db
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     depends_on:
-      - billable_metrics_pg
+      billable_metrics_pg:
+        condition: service_started
     networks:
       - billable-metrics-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   billable-metrics-network:
