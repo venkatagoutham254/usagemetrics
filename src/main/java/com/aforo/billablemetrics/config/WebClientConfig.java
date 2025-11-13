@@ -10,7 +10,7 @@ public class WebClientConfig {
     @Bean
     public WebClient productServiceWebClient() {
         return WebClient.builder()
-                .baseUrl("http://54.238.204.246:8080/api/products")
+                .baseUrl("http://3.208.93.68:8080/api/products")
                 .build();
     }
 
@@ -18,7 +18,14 @@ public class WebClientConfig {
     public WebClient ratePlanServiceWebClient() {
         // Uses the same Product service host/port; rate plan API is in the same service
         return WebClient.builder()
-                .baseUrl("http://54.238.204.246:8080/api/rate-plans")
+                .baseUrl("http://3.208.93.68:8080/api/rate-plans")
+                .build();
+    }
+
+    @Bean
+    public WebClient customerServiceWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://44.201.19.187:8081")
                 .build();
     }
 }
