@@ -23,8 +23,8 @@ jobs:
           mvn -B clean package -DskipTests
           # DEBUG: list target so you can see the exact jar name in logs
           ls target
-          # ✅ TODO: change this to your actual JAR file name from target/
-          cp target/YOUR_USAGE_METRICS_JAR_NAME.jar app.jar
+          # ✅ Copy the actual JAR file name from target/
+          cp target/usagemetrics-0.0.1-SNAPSHOT.jar app.jar
 
       - name: Decode EC2 SSH key
         run: |
