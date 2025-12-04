@@ -22,7 +22,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://13.115.248.133",
                         "http://54.238.204.246",
                         "http://18.182.19.181",
-                        "http://54.221.164.5"
+                        "http://54.221.164.5",
+                        "http://aforo.space",
+                        "https://aforo.space"
 
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
