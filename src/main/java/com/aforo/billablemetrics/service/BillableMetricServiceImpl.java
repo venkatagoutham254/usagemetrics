@@ -200,6 +200,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     @Override
+    @Transactional
     public void deleteMetric(Long id) {
         Long orgId = TenantContext.require();
         BillableMetric metric = metricRepo.findByBillableMetricIdAndOrganizationId(id, orgId)
@@ -224,6 +225,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     }
 
     @Override
+    @Transactional
     public void deleteMetricsByProductId(Long productId) {
         Long orgId = TenantContext.require();
         metricRepo.deleteByOrganizationIdAndProductId(orgId, productId);
