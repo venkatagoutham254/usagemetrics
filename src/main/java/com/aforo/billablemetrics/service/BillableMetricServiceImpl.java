@@ -157,10 +157,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         validateProductActive(metric.getProductId());
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
-        if (metric.getAggregationFunction() == null)
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "aggregationFunction is required");
-        if (metric.getAggregationWindow() == null)
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "aggregationWindow is required");
         if (metric.getVersion() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "version is required");
 
@@ -170,12 +166,15 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                         "usageConditions are required when billingCriteria=BILL_BASED_ON_USAGE_CONDITIONS");
         }
 
-        BillableMetricValidator.validateAll(
-            metric.getUnitOfMeasure(),
-            metric.getAggregationFunction(),
-            metric.getAggregationWindow(),
-            metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
-        );
+        // Only validate aggregation fields if all are provided
+        if (metric.getAggregationFunction() != null && metric.getAggregationWindow() != null) {
+            BillableMetricValidator.validateAll(
+                metric.getUnitOfMeasure(),
+                metric.getAggregationFunction(),
+                metric.getAggregationWindow(),
+                metric.getUsageConditions() == null ? List.of() : metric.getUsageConditions()
+            );
+        }
 
         metric.setStatus(MetricStatus.ACTIVE);
         BillableMetric saved = metricRepo.save(metric);
