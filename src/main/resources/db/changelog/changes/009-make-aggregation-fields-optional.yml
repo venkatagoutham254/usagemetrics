@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: make-aggregation-fields-optional-on-active
+      author: aforo
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE billable_metric 
+              DROP CONSTRAINT IF EXISTS ck_active_requires_fields;
+              
+              ALTER TABLE billable_metric 
+              ADD CONSTRAINT ck_active_requires_fields 
+              CHECK ((status <> 'ACTIVE') OR (
+                metric_name IS NOT NULL AND
+                product_id IS NOT NULL AND
+                unit_of_measure IS NOT NULL AND
+                version IS NOT NULL
+              ))
