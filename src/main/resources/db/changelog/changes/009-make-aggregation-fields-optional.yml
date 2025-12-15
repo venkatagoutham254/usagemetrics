@@ -13,6 +13,5 @@ databaseChangeLog:
               CHECK ((status <> 'ACTIVE') OR (
                 metric_name IS NOT NULL AND
                 product_id IS NOT NULL AND
-                unit_of_measure IS NOT NULL AND
-                version IS NOT NULL
+                unit_of_measure IS NOT NULL
               ))
