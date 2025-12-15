@@ -157,8 +157,6 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         validateProductActive(metric.getProductId());
         if (metric.getUnitOfMeasure() == null)
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "unitOfMeasure is required");
-        if (metric.getVersion() == null)
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "version is required");
 
         if (metric.getBillingCriteria() == BillingCriteria.BILL_BASED_ON_USAGE_CONDITIONS) {
             if (metric.getUsageConditions() == null || metric.getUsageConditions().isEmpty())
