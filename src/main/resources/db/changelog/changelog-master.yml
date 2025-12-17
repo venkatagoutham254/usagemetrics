@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/001-create-billable-metric.yml
+  - include:
+      file: db/changelog/changes/002-add-billing-criteria-to-billable-metric.yml
+  - include:
+      file: db/changelog/changes/003-create-metricstatus.yml
+  - include:
+      file: db/changelog/changes/004-nullify-new-columns.yml
+  - include:
+      file: db/changelog/changes/005-add-audit-columns.yml
+  - include:
+      file: db/changelog/changes/2025-09-02_add_tenancy.yml
+  - include:
+      file: db/changelog/changes/009-make-aggregation-fields-optional.yml

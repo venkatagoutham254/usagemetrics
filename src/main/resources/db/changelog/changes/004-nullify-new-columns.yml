@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: relax-nullables-for-draft
+      author: aforo
+      changes:
+        # billable_metric: allow NULLs while in DRAFT
+        - modifyDataType: { tableName: billable_metric, columnName: metric_name,          newDataType: VARCHAR(255) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: metric_name, columnDataType: VARCHAR(255) }
+        - modifyDataType: { tableName: billable_metric, columnName: product_id,           newDataType: BIGINT }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: product_id, columnDataType: BIGINT }
+        - modifyDataType: { tableName: billable_metric, columnName: version,              newDataType: VARCHAR(100) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: version, columnDataType: VARCHAR(100) }
+        - modifyDataType: { tableName: billable_metric, columnName: unit_of_measure,      newDataType: VARCHAR(100) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: unit_of_measure, columnDataType: VARCHAR(100) }
+        - modifyDataType: { tableName: billable_metric, columnName: description,          newDataType: TEXT }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: description, columnDataType: TEXT }
+        - modifyDataType: { tableName: billable_metric, columnName: aggregation_function, newDataType: VARCHAR(100) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: aggregation_function, columnDataType: VARCHAR(100) }
+        - modifyDataType: { tableName: billable_metric, columnName: aggregation_window,   newDataType: VARCHAR(100) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: aggregation_window, columnDataType: VARCHAR(100) }
+        - modifyDataType: { tableName: billable_metric, columnName: billing_criteria,     newDataType: VARCHAR(100) }
+        - dropNotNullConstraint: { tableName: billable_metric, columnName: billing_criteria, columnDataType: VARCHAR(100) }
+
+  - changeSet:
+      id: check-active-requires-fields
+      author: aforo
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE billable_metric 
+              ADD CONSTRAINT ck_active_requires_fields 
+              CHECK ((status <> 'ACTIVE') OR (
+                metric_name IS NOT NULL AND
+                product_id IS NOT NULL AND
+                unit_of_measure IS NOT NULL AND
+                aggregation_function IS NOT NULL AND
+                aggregation_window IS NOT NULL AND
+                version IS NOT NULL
+              ))

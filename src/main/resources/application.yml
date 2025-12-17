@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5439/billable_metrics_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: none
+  jackson:
+    date-format: dd MMM, yyyy HH:mm z
+    time-zone: Asia/Kolkata
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog-master.yml
+
+application:
+  name: billable-metrics-service
+server:
+  port: 8081
+
+aforo:
+  jwt:
+    issuer: aforo-billablemetrics
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    expiryMinutes: 120
+  cors:
+    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
+    # Include your frontend origin(s). Add https variants if applicable.
+    allowed-origins: "http://productscreens.s3-website-ap-northeast-1.amazonaws.com,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://13.115.248.133,http://54.238.204.246,http://18.182.19.181,http://54.221.164.5,http://aforo.space,https://aforo.space"
+    allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    allowed-headers: "Authorization,Content-Type,X-Organization-Id"
+    allow-credentials: true
+
+logging:
+  level:
+    com.aforo.billablemetrics.security: DEBUG
