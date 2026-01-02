@@ -43,18 +43,30 @@ jobs:
             cd /home/ec2-user
             docker-compose down
             docker-compose up --build -d
+            echo "Waiting 10 seconds for containers to initialize..."
+            sleep 10
+            docker ps
           EOF
 
       - name: Wait for health check
         run: |
-          echo "Waiting for http://${{ secrets.EC2_HOST }}:8081/api/health ..."
-          for i in {1..30}; do
-            if curl -fs http://${{ secrets.EC2_HOST }}:8081/api/health > /dev/null; then
-              echo "✅ Service is up!" && exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ Service failed to start in time" && exit 1
+          echo "Waiting for service to be healthy..."
+          ssh -i ec2-key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            for i in {1..60}; do
+              echo "Attempt $i/60..."
+              if curl -fs http://localhost:8081/api/health > /dev/null 2>&1; then
+                echo "✅ Service is up!"
+                curl -s http://localhost:8081/api/health
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "❌ Service failed to start in time"
+            echo "Fetching Docker logs..."
+            docker logs billable_metrics_app --tail 100
+            docker ps -a
+            exit 1
+          EOF
 
       - name: Clean up SSH key
         if: always()
