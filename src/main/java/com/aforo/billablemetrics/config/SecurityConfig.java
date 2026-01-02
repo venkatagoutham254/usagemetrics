@@ -54,9 +54,7 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
-                        "/api/health",
-                        "/actuator/health",
-                        "/actuator/health/**").permitAll()
+                        "/api/health").permitAll()
                 // Allow preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // All billable-metrics APIs need JWT

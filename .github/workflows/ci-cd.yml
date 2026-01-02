@@ -24,9 +24,7 @@ jobs:
           # DEBUG: list target so you can see the exact jar name in logs
           ls -la target/
           # Verify the JAR is executable
-          file target/usagemetrics-0.0.1-SNAPSHOT.jar
-          # ✅ Copy the actual JAR file name from target/
-          cp target/usagemetrics-0.0.1-SNAPSHOT.jar app.jar
+          file target/app.jar
 
       - name: Decode EC2 SSH key
         run: |
@@ -35,7 +33,7 @@ jobs:
 
       - name: Copy files to EC2 via SCP
         run: |
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no app.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -i ec2-key.pem -o StrictHostKeyChecking=no target/app.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app.jar
           scp -i ec2-key.pem -o StrictHostKeyChecking=no Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
           scp -i ec2-key.pem -o StrictHostKeyChecking=no docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
