@@ -39,6 +39,7 @@ public class ProductServiceClient {
                     .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(Object.class)
+                    .timeout(java.time.Duration.ofSeconds(3))
                     .block();
             long duration = System.currentTimeMillis() - startTime;
             log.info("[Product Service] Product exists check SUCCESS - productId: {}, duration: {}ms", productId, duration);
@@ -60,6 +61,7 @@ public class ProductServiceClient {
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductName)
+                    .timeout(java.time.Duration.ofSeconds(3))
                     .block();
             long duration = System.currentTimeMillis() - startTime;
             log.info("[Product Service] Product name fetched SUCCESS - productId: {}, productName: {}, duration: {}ms", productId, productName, duration);
@@ -81,6 +83,7 @@ public class ProductServiceClient {
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductType)
+                    .timeout(java.time.Duration.ofSeconds(3))
                     .block();
             long duration = System.currentTimeMillis() - startTime;
             log.info("[Product Service] Product type fetched SUCCESS - productId: {}, productType: {}, duration: {}ms", productId, productType, duration);
@@ -102,6 +105,7 @@ public class ProductServiceClient {
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getStatus)
+                    .timeout(java.time.Duration.ofSeconds(3))
                     .block();
             boolean isActive = status != null && "ACTIVE".equalsIgnoreCase(status);
             long duration = System.currentTimeMillis() - startTime;
