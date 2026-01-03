@@ -31,6 +31,8 @@ public class ProductServiceClient {
     }
 
     public boolean productExists(Long productId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[Product Service] Checking if product exists - productId: {}", productId);
         try {
             productServiceWebClient.get()
                     .uri("/{id}", productId)
@@ -38,44 +40,61 @@ public class ProductServiceClient {
                     .retrieve()
                     .bodyToMono(Object.class)
                     .block();
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[Product Service] Product exists check SUCCESS - productId: {}, duration: {}ms", productId, duration);
             return true;
         } catch (Exception e) {
-            log.warn("Product validation failed: {}", e.getMessage());
+            long duration = System.currentTimeMillis() - startTime;
+            log.warn("[Product Service] Product validation FAILED - productId: {}, duration: {}ms, error: {}", productId, duration, e.getMessage());
             return false;
         }
     }
 
     public String getProductNameById(Long productId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[Product Service] Fetching product name - productId: {}", productId);
         try {
-            return productServiceWebClient.get()
+            String productName = productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductName)
                     .block();
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[Product Service] Product name fetched SUCCESS - productId: {}, productName: {}, duration: {}ms", productId, productName, duration);
+            return productName;
         } catch (Exception e) {
-            log.warn("Failed to fetch product name: {}", e.getMessage());
+            long duration = System.currentTimeMillis() - startTime;
+            log.warn("[Product Service] Failed to fetch product name - productId: {}, duration: {}ms, error: {}", productId, duration, e.getMessage());
             return null;
         }
     }
 
     public String getProductTypeById(Long productId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[Product Service] Fetching product type - productId: {}", productId);
         try {
-            return productServiceWebClient.get()
+            String productType = productServiceWebClient.get()
                     .uri("/{id}", productId)
                     .header("Authorization", getBearerToken())   // ✅ forward token
                     .retrieve()
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getProductType)
                     .block();
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[Product Service] Product type fetched SUCCESS - productId: {}, productType: {}, duration: {}ms", productId, productType, duration);
+            return productType;
         } catch (Exception e) {
-            log.warn("Failed to fetch product type: {}", e.getMessage());
+            long duration = System.currentTimeMillis() - startTime;
+            log.error("[Product Service] Failed to fetch product type - productId: {}, duration: {}ms, error: {}", productId, duration, e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product type for ID: " + productId);
         }
     }
 
     public boolean isProductActive(Long productId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[Product Service] Checking product active status - productId: {}", productId);
         try {
             String status = productServiceWebClient.get()
                     .uri("/{id}", productId)
@@ -84,9 +103,13 @@ public class ProductServiceClient {
                     .bodyToMono(ProductResponse.class)
                     .map(ProductResponse::getStatus)
                     .block();
-            return status != null && "ACTIVE".equalsIgnoreCase(status);
+            boolean isActive = status != null && "ACTIVE".equalsIgnoreCase(status);
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[Product Service] Product status check SUCCESS - productId: {}, status: {}, isActive: {}, duration: {}ms", productId, status, isActive, duration);
+            return isActive;
         } catch (Exception e) {
-            log.warn("Failed to fetch product status: {}", e.getMessage());
+            long duration = System.currentTimeMillis() - startTime;
+            log.error("[Product Service] Failed to fetch product status - productId: {}, duration: {}ms, error: {}", productId, duration, e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot fetch product status for ID: " + productId);
         }
     }
