@@ -9,8 +9,16 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - billable-metrics-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d billable_metrics_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   billable_metrics_app:
     build:
@@ -21,13 +29,14 @@ services:
     ports:
       - "8081:8081"
     environment:
+      - SERVER_PORT=8081
       - SPRING_DATASOURCE_URL=jdbc:postgresql://billable_metrics_pg:5432/billable_metrics_db
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     depends_on:
       billable_metrics_pg:
-        condition: service_started
+        condition: service_healthy
     networks:
       - billable-metrics-network
     healthcheck:
@@ -36,6 +45,10 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
 
 networks:
   billable-metrics-network:

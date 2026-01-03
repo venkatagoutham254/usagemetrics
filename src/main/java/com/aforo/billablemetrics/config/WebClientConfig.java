@@ -16,7 +16,6 @@ public class WebClientConfig {
 
     @Bean
     public WebClient ratePlanServiceWebClient() {
-        // Uses the same Product service host/port; rate plan API is in the same service
         return WebClient.builder()
                 .baseUrl("http://3.208.93.68:8080/api/rate-plans")
                 .build();
