@@ -7,8 +7,8 @@ services:
       POSTGRES_DB: billable_metrics_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
+    # NO PORT EXPOSURE - only accessible via internal Docker network
+    # This prevents internet exposure and security attacks
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

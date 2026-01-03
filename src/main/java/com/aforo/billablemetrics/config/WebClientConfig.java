@@ -16,13 +16,14 @@ import java.util.concurrent.TimeUnit;
 public class WebClientConfig {
 
     // CRITICAL: Timeouts prevent connection pool exhaustion from circular dependency
+    // Lower timeouts ensure faster failure on broken/slow external services
     private HttpClient createHttpClientWithTimeouts() {
         return HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-                .responseTimeout(Duration.ofSeconds(5))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 2000)  // 2s to establish connection
+                .responseTimeout(Duration.ofSeconds(3))  // 3s max for full response (including errors)
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
-                        .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS)));
+                        .addHandlerLast(new ReadTimeoutHandler(3, TimeUnit.SECONDS))
+                        .addHandlerLast(new WriteTimeoutHandler(3, TimeUnit.SECONDS)));
     }
 
     @Bean
