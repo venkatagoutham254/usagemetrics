@@ -32,7 +32,6 @@ public class RatePlanServiceClient {
                     .header("Authorization", getBearerToken())
                     .retrieve()
                     .toBodilessEntity()
-                    .timeout(java.time.Duration.ofSeconds(3))
                     .block();
             long duration = System.currentTimeMillis() - startTime;
             log.info("[Rate Plan Service] Rate plan deletion SUCCESS - billableMetricId: {}, duration: {}ms", billableMetricId, duration);
