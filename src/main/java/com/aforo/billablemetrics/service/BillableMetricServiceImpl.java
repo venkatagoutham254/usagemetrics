@@ -217,7 +217,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationIdAndProductId(orgId, productId)
                 .stream()
-                .map(this::buildResponse)
+                .map(mapper::toResponse)
                 .toList();
     }
 
