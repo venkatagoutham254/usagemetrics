@@ -1,0 +1,832 @@
+### Billable Metrics Validation Test Suite
+### Token: eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhZm9yby1jdXN0b21lcnNlcnZpY2UiLCJzdWIiOiJ2ZW5rYXRhQGFmb3JvLmFpIiwic3RhdHVzIjoiQUNUSVZFIiwib3JnSWQiOjExLCJpYXQiOjE3Njk0OTExODIsImV4cCI6MTc3MDA5NTk4Mn0.zVp-c9n6r3MXd4IszPxfYojFt_njrKen7ss2mtUk_vg
+### Base URL: http://localhost:8080
+
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhZm9yby1jdXN0b21lcnNlcnZpY2UiLCJzdWIiOiJ2ZW5rYXRhQGFmb3JvLmFpIiwic3RhdHVzIjoiQUNUSVZFIiwib3JnSWQiOjExLCJpYXQiOjE3Njk0OTExODIsImV4cCI6MTc3MDA5NTk4Mn0.zVp-c9n6r3MXd4IszPxfYojFt_njrKen7ss2mtUk_vg
+@baseUrl = http://localhost:8080
+
+### ============================================
+### NUMBER TYPE VALIDATIONS (Should FAIL)
+### ============================================
+
+### Test 1: api_call - statusCode (INVALID - string instead of number)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test statusCode Invalid",
+  "description": "Testing statusCode with string value",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "STATUS_CODE",
+      "operator": "=",
+      "value": "not_a_number"
+    }
+  ]
+}
+
+### Test 2: api_call - responseTime (INVALID - text instead of number)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test responseTime Invalid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "RESPONSE_TIME",
+      "operator": ">",
+      "value": "slow"
+    }
+  ]
+}
+
+### Test 3: transaction - amount (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test amount Invalid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "AMOUNT",
+      "operator": ">",
+      "value": "expensive"
+    }
+  ]
+}
+
+### Test 4: hit - timeSpent (INVALID - string)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test timeSpent Invalid",
+  "productId": 1,
+  "unitOfMeasure": "HIT",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TIME_SPENT",
+      "operator": ">=",
+      "value": "long_time"
+    }
+  ]
+}
+
+### Test 5: token - tokenCount (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test tokenCount Invalid",
+  "productId": 2,
+  "unitOfMeasure": "TOKEN",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TOKEN_COUNT",
+      "operator": "<=",
+      "value": "many"
+    }
+  ]
+}
+
+### Test 6: file - fileSize (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test fileSize Invalid",
+  "productId": 3,
+  "unitOfMeasure": "FILE",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "FILE_SIZE",
+      "operator": "<",
+      "value": "large"
+    }
+  ]
+}
+
+### Test 7: MB - fileSizeMB (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test fileSizeMB Invalid",
+  "productId": 3,
+  "unitOfMeasure": "MB",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "FILE_SIZE_MB",
+      "operator": ">",
+      "value": "huge"
+    }
+  ]
+}
+
+### Test 8: record - rowCount (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test rowCount Invalid",
+  "productId": 3,
+  "unitOfMeasure": "RECORD",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "ROW_COUNT",
+      "operator": ">=",
+      "value": "many_rows"
+    }
+  ]
+}
+
+### Test 9: query_execution - executionTime (INVALID - text)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test executionTime Invalid",
+  "productId": 4,
+  "unitOfMeasure": "QUERY_EXECUTION",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "EXECUTION_TIME",
+      "operator": "<",
+      "value": "fast"
+    }
+  ]
+}
+
+### ============================================
+### STRING TYPE VALIDATIONS (Should FAIL)
+### ============================================
+
+### Test 10: api_call - method (INVALID - empty string)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test method Invalid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "METHOD",
+      "operator": "equals",
+      "value": ""
+    }
+  ]
+}
+
+### Test 11: api_call - endpoint (INVALID - spaces only)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test endpoint Invalid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "ENDPOINT",
+      "operator": "startsWith",
+      "value": "   "
+    }
+  ]
+}
+
+### Test 12: request - requestId (INVALID - empty)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test requestId Invalid",
+  "productId": 1,
+  "unitOfMeasure": "REQUEST",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "REQUEST_ID",
+      "operator": "equals",
+      "value": ""
+    }
+  ]
+}
+
+### ============================================
+### BOOLEAN TYPE VALIDATIONS (Should FAIL)
+### ============================================
+
+### Test 13: MB - compressed (INVALID - yes instead of true/false)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test compressed Invalid",
+  "productId": 3,
+  "unitOfMeasure": "MB",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "COMPRESSED",
+      "operator": "is true",
+      "value": "yes"
+    }
+  ]
+}
+
+### Test 14: query_execution - cached (INVALID - 1 instead of true/false)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test cached Invalid",
+  "productId": 4,
+  "unitOfMeasure": "QUERY_EXECUTION",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "CACHED",
+      "operator": "is false",
+      "value": "1"
+    }
+  ]
+}
+
+### Test 15: record - isValid (INVALID - no instead of true/false)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test isValid Invalid",
+  "productId": 3,
+  "unitOfMeasure": "RECORD",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "IS_VALID",
+      "operator": "is true",
+      "value": "no"
+    }
+  ]
+}
+
+### ============================================
+### DATE TYPE VALIDATIONS (Should FAIL)
+### ============================================
+
+### Test 16: request - timestamp (INVALID - not a date)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test timestamp Invalid",
+  "productId": 1,
+  "unitOfMeasure": "REQUEST",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TIMESTAMP",
+      "operator": "after",
+      "value": "yesterday"
+    }
+  ]
+}
+
+### Test 17: file - uploadTime (INVALID - invalid date format)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test uploadTime Invalid",
+  "productId": 3,
+  "unitOfMeasure": "FILE",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "UPLOAD_TIME",
+      "operator": "before",
+      "value": "not-a-date"
+    }
+  ]
+}
+
+### Test 18: delivery - deliveryTime (INVALID - invalid month)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test deliveryTime Invalid",
+  "productId": 3,
+  "unitOfMeasure": "DELIVERY",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "DELIVERY_TIME",
+      "operator": "between",
+      "value": "2024-13-45"
+    }
+  ]
+}
+
+### ============================================
+### ENUM TYPE VALIDATIONS (Should FAIL)
+### ============================================
+
+### Test 19: api_call - region (INVALID - fake region)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test region Invalid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "REGION_API",
+      "operator": "equals",
+      "value": "mars-west-1"
+    }
+  ]
+}
+
+### Test 20: transaction - status (INVALID - unknown status)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test status Invalid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "STATUS",
+      "operator": "equals",
+      "value": "unknown_status"
+    }
+  ]
+}
+
+### Test 21: transaction - currency (INVALID - fake currency)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test currency Invalid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "CURRENCY",
+      "operator": "equals",
+      "value": "FAKE"
+    }
+  ]
+}
+
+### Test 22: transaction - paymentMethod (INVALID - barter)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test paymentMethod Invalid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "PAYMENT_METHOD",
+      "operator": "in",
+      "value": "barter"
+    }
+  ]
+}
+
+### Test 23: hit - device (INVALID - quantum_computer)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test device Invalid",
+  "productId": 1,
+  "unitOfMeasure": "HIT",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "DEVICE",
+      "operator": "equals",
+      "value": "quantum_computer"
+    }
+  ]
+}
+
+### Test 24: hit - browser (INVALID - netscape)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test browser Invalid",
+  "productId": 1,
+  "unitOfMeasure": "HIT",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "BROWSER",
+      "operator": "notEquals",
+      "value": "netscape"
+    }
+  ]
+}
+
+### Test 25: token - tokenType (INVALID - magic)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test tokenType Invalid",
+  "productId": 2,
+  "unitOfMeasure": "TOKEN",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TOKEN_TYPE",
+      "operator": "equals",
+      "value": "magic"
+    }
+  ]
+}
+
+### Test 26: token - computeTier (INVALID - ultra)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test computeTier Invalid",
+  "productId": 2,
+  "unitOfMeasure": "TOKEN",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "COMPUTE_TIER",
+      "operator": "in",
+      "value": "ultra"
+    }
+  ]
+}
+
+### Test 27: file - fileType (INVALID - hologram)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test fileType Invalid",
+  "productId": 3,
+  "unitOfMeasure": "FILE",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "FILE_TYPE",
+      "operator": "equals",
+      "value": "hologram"
+    }
+  ]
+}
+
+### Test 28: file - source (INVALID - telepathy)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test source Invalid",
+  "productId": 3,
+  "unitOfMeasure": "FILE",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "SOURCE",
+      "operator": "equals",
+      "value": "telepathy"
+    }
+  ]
+}
+
+### Test 29: MB - transferType (INVALID - teleport)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test transferType Invalid",
+  "productId": 3,
+  "unitOfMeasure": "MB",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TRANSFER_TYPE",
+      "operator": "equals",
+      "value": "teleport"
+    }
+  ]
+}
+
+### Test 30: query_execution - queryType (INVALID - magic_query)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test queryType Invalid",
+  "productId": 4,
+  "unitOfMeasure": "QUERY_EXECUTION",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "QUERY_TYPE",
+      "operator": "equals",
+      "value": "magic_query"
+    }
+  ]
+}
+
+### ============================================
+### VALID REQUESTS (Should SUCCEED)
+### ============================================
+
+### Test 31: api_call - statusCode (VALID - 200)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test statusCode Valid",
+  "description": "Testing statusCode with valid number",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "STATUS_CODE",
+      "operator": "=",
+      "value": "200"
+    }
+  ]
+}
+
+### Test 32: api_call - responseTime (VALID - 100.5)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test responseTime Valid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "AVG",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "RESPONSE_TIME",
+      "operator": ">",
+      "value": "100.5"
+    }
+  ]
+}
+
+### Test 33: transaction - amount (VALID - 99.99)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test amount Valid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "AMOUNT",
+      "operator": ">",
+      "value": "99.99"
+    }
+  ]
+}
+
+### Test 34: MB - compressed (VALID - true)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test compressed Valid",
+  "productId": 3,
+  "unitOfMeasure": "MB",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "COMPRESSED",
+      "operator": "is true",
+      "value": "true"
+    }
+  ]
+}
+
+### Test 35: request - timestamp (VALID - 2024-01-15)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test timestamp Valid",
+  "productId": 1,
+  "unitOfMeasure": "REQUEST",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TIMESTAMP",
+      "operator": "after",
+      "value": "2024-01-15"
+    }
+  ]
+}
+
+### Test 36: api_call - region (VALID - us-east-1)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test region Valid",
+  "productId": 1,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "REGION_API",
+      "operator": "equals",
+      "value": "us-east-1"
+    }
+  ]
+}
+
+### Test 37: transaction - currency (VALID - USD)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test currency Valid",
+  "productId": 1,
+  "unitOfMeasure": "TRANSACTION",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "CURRENCY",
+      "operator": "equals",
+      "value": "USD"
+    }
+  ]
+}
+
+### Test 38: hit - device (VALID - mobile)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test device Valid",
+  "productId": 1,
+  "unitOfMeasure": "HIT",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "DEVICE",
+      "operator": "equals",
+      "value": "mobile"
+    }
+  ]
+}
+
+### Test 39: token - tokenType (VALID - prompt)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test tokenType Valid",
+  "productId": 2,
+  "unitOfMeasure": "TOKEN",
+  "aggregationFunction": "SUM",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "TOKEN_TYPE",
+      "operator": "equals",
+      "value": "prompt"
+    }
+  ]
+}
+
+### Test 40: file - fileType (VALID - pdf)
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "Test fileType Valid",
+  "productId": 3,
+  "unitOfMeasure": "FILE",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_DAY",
+  "usageConditions": [
+    {
+      "dimension": "FILE_TYPE",
+      "operator": "equals",
+      "value": "pdf"
+    }
+  ]
+}

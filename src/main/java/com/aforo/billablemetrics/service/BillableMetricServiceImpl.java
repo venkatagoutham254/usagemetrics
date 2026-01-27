@@ -283,6 +283,15 @@ public class BillableMetricServiceImpl implements BillableMetricService {
                         "Operator '" + operator + "' is not valid for dimension " + dimEnum.getDimension());
             }
 
+            // CRITICAL: Validate the value matches the expected data type
+            if (!ValueTypeValidator.isValidValueForType(dimEnum, value)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        ValueTypeValidator.getValidationErrorMessage(dimEnum, value));
+            }
+
+            // Normalize the value based on its type
+            value = ValueTypeValidator.normalizeValue(dimEnum, value);
+
             // Create the usage condition with the final values
             UsageCondition condition = new UsageCondition();
             condition.setDimension(dimEnum);
@@ -307,11 +316,28 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         // Provide sensible default values based on dimension type
         return switch (dimension.getType()) {
             case NUMBER -> "0";
-            case STRING -> "";
+            case STRING -> "default";
             case BOOLEAN -> "true";
             case DATE -> "2024-01-01";
-            case ENUM -> "default";
-            default -> "";
+            case ENUM -> {
+                // Return first valid enum value based on dimension name
+                String dimName = dimension.getDimension();
+                yield switch (dimName) {
+                    case "region" -> "us-east-1";
+                    case "status" -> "pending";
+                    case "currency" -> "USD";
+                    case "paymentMethod" -> "credit_card";
+                    case "device" -> "desktop";
+                    case "browser" -> "chrome";
+                    case "tokenType" -> "prompt";
+                    case "computeTier" -> "standard";
+                    case "fileType" -> "txt";
+                    case "source" -> "web";
+                    case "transferType" -> "upload";
+                    case "queryType" -> "select";
+                    default -> "default";
+                };
+            }
         };
     }
 

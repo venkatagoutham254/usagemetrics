@@ -1,0 +1,294 @@
+### API_CALL UOM Dimension Tests
+### Product ID: 24 (API type)
+### Token provided by user
+
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhZm9yby1jdXN0b21lcnNlcnZpY2UiLCJzdWIiOiJ2ZW5rYXRhQGFmb3JvLmFpIiwic3RhdHVzIjoiQUNUSVZFIiwib3JnSWQiOjExLCJpYXQiOjE3Njk0OTExODIsImV4cCI6MTc3MDA5NTk4Mn0.zVp-c9n6r3MXd4IszPxfYojFt_njrKen7ss2mtUk_vg
+@baseUrl = http://localhost:8080
+
+### ============================================
+### API_CALL DIMENSION: statusCode (NUMBER)
+### ============================================
+
+### Test 1: statusCode - INVALID (string instead of number) - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API statusCode Invalid Test",
+  "description": "Testing statusCode with invalid string value",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "STATUS_CODE",
+      "operator": "=",
+      "value": "not_a_number"
+    }
+  ]
+}
+
+### Test 2: statusCode - VALID (200) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API statusCode Valid Test",
+  "description": "Testing statusCode with valid number 200",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "STATUS_CODE",
+      "operator": "=",
+      "value": "200"
+    }
+  ]
+}
+
+### ============================================
+### API_CALL DIMENSION: method (STRING)
+### ============================================
+
+### Test 3: method - INVALID (empty string) - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API method Invalid Test",
+  "description": "Testing method with empty string",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "METHOD",
+      "operator": "equals",
+      "value": ""
+    }
+  ]
+}
+
+### Test 4: method - VALID (GET) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API method Valid Test",
+  "description": "Testing method with valid value GET",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "METHOD",
+      "operator": "equals",
+      "value": "GET"
+    }
+  ]
+}
+
+### ============================================
+### API_CALL DIMENSION: endpoint (STRING)
+### ============================================
+
+### Test 5: endpoint - INVALID (spaces only) - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API endpoint Invalid Test",
+  "description": "Testing endpoint with spaces only",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "ENDPOINT",
+      "operator": "startsWith",
+      "value": "   "
+    }
+  ]
+}
+
+### Test 6: endpoint - VALID (/api/users) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API endpoint Valid Test",
+  "description": "Testing endpoint with valid path",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "ENDPOINT",
+      "operator": "startsWith",
+      "value": "/api/users"
+    }
+  ]
+}
+
+### ============================================
+### API_CALL DIMENSION: region (ENUM)
+### ============================================
+
+### Test 7: region - INVALID (mars-west-1) - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API region Invalid Test",
+  "description": "Testing region with invalid value",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "REGION_API",
+      "operator": "equals",
+      "value": "mars-west-1"
+    }
+  ]
+}
+
+### Test 8: region - VALID (us-east-1) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API region Valid Test",
+  "description": "Testing region with valid AWS region",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "REGION_API",
+      "operator": "equals",
+      "value": "us-east-1"
+    }
+  ]
+}
+
+### ============================================
+### API_CALL DIMENSION: responseTime (NUMBER)
+### ============================================
+
+### Test 9: responseTime - INVALID (text "slow") - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API responseTime Invalid Test",
+  "description": "Testing responseTime with text instead of number",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "AVG",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "RESPONSE_TIME",
+      "operator": ">",
+      "value": "slow"
+    }
+  ]
+}
+
+### Test 10: responseTime - VALID (100.5) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API responseTime Valid Test",
+  "description": "Testing responseTime with valid decimal number",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "AVG",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "RESPONSE_TIME",
+      "operator": ">",
+      "value": "100.5"
+    }
+  ]
+}
+
+### ============================================
+### API_CALL DIMENSION: apiKey (STRING)
+### ============================================
+
+### Test 11: apiKey - INVALID (empty) - Should FAIL
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API apiKey Invalid Test",
+  "description": "Testing apiKey with empty value",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "API_KEY",
+      "operator": "equals",
+      "value": ""
+    }
+  ]
+}
+
+### Test 12: apiKey - VALID (sk-1234567890) - Should SUCCEED
+POST {{baseUrl}}/api/billable-metrics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metricName": "API apiKey Valid Test",
+  "description": "Testing apiKey with valid value",
+  "productId": 24,
+  "unitOfMeasure": "API_CALL",
+  "aggregationFunction": "COUNT",
+  "aggregationWindow": "PER_HOUR",
+  "usageConditions": [
+    {
+      "dimension": "API_KEY",
+      "operator": "equals",
+      "value": "sk-1234567890"
+    }
+  ]
+}
+
+### ============================================
+### SUMMARY: API_CALL UOM has 6 dimensions
+### ============================================
+### 1. statusCode (NUMBER) - Tests 1-2
+### 2. method (STRING) - Tests 3-4
+### 3. endpoint (STRING) - Tests 5-6
+### 4. region (ENUM) - Tests 7-8
+### 5. responseTime (NUMBER) - Tests 9-10
+### 6. apiKey (STRING) - Tests 11-12
+### 
+### Total: 12 tests (6 should fail, 6 should succeed)

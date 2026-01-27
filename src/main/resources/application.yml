@@ -1,4 +1,7 @@
 spring:
+  docker:
+    compose:
+      enabled: false
   datasource:
     url: jdbc:postgresql://localhost:5439/billable_metrics_db
     username: postgres
