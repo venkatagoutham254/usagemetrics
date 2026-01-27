@@ -217,7 +217,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
         Long orgId = TenantContext.require();
         return metricRepo.findByOrganizationIdAndProductId(orgId, productId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(this::buildResponse)
                 .toList();
     }
 
@@ -329,6 +329,7 @@ public class BillableMetricServiceImpl implements BillableMetricService {
     private BillableMetricResponse buildResponse(BillableMetric metric) {
         BillableMetricResponse response = mapper.toResponse(metric);
         response.setProductName(productClient.getProductNameById(metric.getProductId()));
+        response.setIcon(productClient.getProductIconById(metric.getProductId()));
         return response;
     }
 }
