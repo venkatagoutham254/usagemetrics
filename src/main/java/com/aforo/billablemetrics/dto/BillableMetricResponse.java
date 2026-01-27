@@ -25,6 +25,8 @@ public class BillableMetricResponse {
 
     private String productName;
 
+    private String icon;
+
     private String version;
 
     private UnitOfMeasure unitOfMeasure;

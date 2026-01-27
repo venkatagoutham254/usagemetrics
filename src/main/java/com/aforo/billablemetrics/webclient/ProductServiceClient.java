@@ -114,6 +114,27 @@ public class ProductServiceClient {
         }
     }
 
+    public String getProductIconById(Long productId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[Product Service] Fetching product icon - productId: {}", productId);
+        try {
+            String icon = productServiceWebClient.get()
+                    .uri("/{id}", productId)
+                    .header("Authorization", getBearerToken())   // ✅ forward token
+                    .retrieve()
+                    .bodyToMono(ProductResponse.class)
+                    .map(ProductResponse::getIcon)
+                    .block();
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[Product Service] Product icon fetched SUCCESS - productId: {}, icon: {}, duration: {}ms", productId, icon, duration);
+            return icon;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            log.warn("[Product Service] Failed to fetch product icon - productId: {}, duration: {}ms, error: {}", productId, duration, e.getMessage());
+            return null;
+        }
+    }
+
     @Getter
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -122,5 +143,6 @@ public class ProductServiceClient {
         private String productName;
         private String productType; // 🔥 ensure backend sends this
         private String status; // product status from Product API
+        private String icon; // product icon URL/path
     }
 }
